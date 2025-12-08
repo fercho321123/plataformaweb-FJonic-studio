@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
     ConfigModule.forRoot({ isGlobal: true }),
 
     TypeOrmModule.forRoot({
+      
       type: 'postgres',
       host: process.env.DB_HOST,
       port: Number(process.env.DB_PORT),
