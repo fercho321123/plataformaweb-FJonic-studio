@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiFetch } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
 export default function LoginPage() {
@@ -13,58 +12,66 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError('');
 
-    try {
-      const data = await apiFetch('/auth/login', {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
+      {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ email, password }),
-      });
+      }
+    );
 
-      login(data.access_token, data.usuario);
-      router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.message);
+    if (!res.ok) {
+      throw new Error('Credenciales incorrectas');
     }
-  };
+
+    const data = await res.json();
+    console.log('RESPUESTA REAL DEL BACKEND:', data);
+
+
+    login(data.access_token, data.usuario);
+
+
+    router.push('/dashboard');
+  } catch (err: any) {
+    setError(err.message || 'Error al iniciar sesión');
+  }
+};
+
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm"
-      >
+    <div className="flex min-h-screen items-center justify-center bg-black text-white">
+      <form onSubmit={handleSubmit} className="bg-zinc-900 p-8 rounded w-96">
         <h1 className="text-2xl font-bold mb-6 text-center">Iniciar Sesión</h1>
 
-        {error && (
-          <p className="bg-red-100 text-red-700 p-2 rounded mb-4 text-sm">
-            {error}
-          </p>
-        )}
+        {error && <p className="text-red-500 mb-4">{error}</p>}
 
         <input
           type="email"
           placeholder="Correo"
-          className="w-full p-2 border rounded mb-4"
+          className="w-full p-2 mb-4 text-black"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          required
         />
 
         <input
           type="password"
           placeholder="Contraseña"
-          className="w-full p-2 border rounded mb-6"
+          className="w-full p-2 mb-6 text-black"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          required
         />
 
         <button
           type="submit"
-          className="w-full bg-black text-white py-2 rounded hover:bg-gray-800"
+          className="bg-blue-600 w-full p-2 rounded hover:bg-blue-700"
         >
           Entrar
         </button>
