@@ -18,7 +18,8 @@ export class ClientesService {
 
   findAll() {
     return this.clienteRepo.find({
-      order: { creadoEn: 'DESC' },
+  order: { createdAt: 'DESC' },
+
     });
   }
 

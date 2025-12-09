@@ -1,4 +1,12 @@
-import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
+import { Proyecto } from '../../proyectos/entities/proyecto.entity';
 
 @Entity('clientes')
 export class Cliente {
@@ -8,7 +16,7 @@ export class Cliente {
   @Column()
   nombre: string;
 
-  @Column()
+  @Column({ unique: true })
   email: string;
 
   @Column()
@@ -17,7 +25,15 @@ export class Cliente {
   @Column()
   empresa: string;
 
+  // ✅ FECHAS PROFESIONALES
   @CreateDateColumn()
-  creadoEn: Date;
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  // ✅ RELACIÓN CON PROYECTOS (SI YA LA ESTÁS USANDO)
+  @OneToMany(() => Proyecto, (proyecto) => proyecto.cliente)
+  proyectos: Proyecto[];
 }
 
