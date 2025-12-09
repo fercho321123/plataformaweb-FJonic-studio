@@ -13,7 +13,7 @@ interface Proyecto {
   id: string;
   nombre: string;
   descripcion: string;
-  estado: string;
+  estado: 'pendiente' | 'iniciado' | 'finalizado';
   fechaInicio: string;
   fechaFin?: string;
   cliente: {
@@ -21,6 +21,7 @@ interface Proyecto {
     nombre: string;
   };
 }
+
 
 export default function ProyectosPage() {
   const [proyectos, setProyectos] = useState<Proyecto[]>([]);
@@ -153,13 +154,22 @@ export default function ProyectosPage() {
           onChange={(e) => setFechaFin(e.target.value)}
         />
 
-        <input
-          className="w-full border p-2 rounded mb-4"
-          placeholder="ID del Cliente"
-          value={clienteId}
-          onChange={(e) => setClienteId(e.target.value)}
-          required
-        />
+{/* SELECT DE CLIENTES (AUTOMÁTICO) */}
+<label className="block text-sm font-medium mb-1">Cliente</label>
+<select
+  className="w-full border p-2 rounded mb-3"
+  value={clienteId}
+  onChange={(e) => setClienteId(e.target.value)}
+  required
+>
+  <option value="">-- Selecciona un cliente --</option>
+  {clientes.map((c) => (
+    <option key={c.id} value={c.id}>
+      {c.nombre} — {c.email} ({c.id.slice(0, 8)})
+    </option>
+  ))}
+</select>
+
 
         <button
           type="submit"
@@ -169,35 +179,7 @@ export default function ProyectosPage() {
         </button>
       </form>
 
-      {/* ✅ LISTADO DE CLIENTES */}
-      <div className="bg-white p-6 rounded-xl shadow-md mb-10 max-w-3xl">
-        <h2 className="text-lg font-semibold mb-4">Clientes Registrados</h2>
 
-        {clientes.length === 0 ? (
-          <p>No hay clientes registrados</p>
-        ) : (
-          <table className="w-full border text-sm">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="border p-2">Nombre</th>
-                <th className="border p-2">Email</th>
-                <th className="border p-2">ID (Usar en Proyectos)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {clientes.map((cliente) => (
-                <tr key={cliente.id}>
-                  <td className="border p-2">{cliente.nombre}</td>
-                  <td className="border p-2">{cliente.email}</td>
-                  <td className="border p-2 font-mono text-xs">
-                    {cliente.id}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
 
       {/* LISTADO DE PROYECTOS */}
       <div className="bg-white p-6 rounded-xl shadow-md">
@@ -210,29 +192,32 @@ export default function ProyectosPage() {
         ) : (
           <table className="w-full border text-sm">
             <thead>
-              <tr className="bg-gray-100">
-                <th className="border p-2">Proyecto</th>
-                <th className="border p-2">Descripción</th>
-                <th className="border p-2">Estado</th>
-                <th className="border p-2">Inicio</th>
-                <th className="border p-2">Final</th>
-                <th className="border p-2">Cliente</th>
-              </tr>
-            </thead>
+  <tr className="bg-gray-100">
+    <th className="border p-2">Proyecto</th>
+    <th className="border p-2">Descripción</th>
+    <th className="border p-2">Estado</th>
+    <th className="border p-2">Inicio</th>
+    <th className="border p-2">Fin</th>
+    <th className="border p-2">Cliente</th>
+  </tr>
+</thead>
+
             <tbody>
               {proyectos.map((proyecto) => (
-                <tr key={proyecto.id}>
-                  <td className="border p-2">{proyecto.nombre}</td>
-                  <td className="border p-2">{proyecto.descripcion}</td>
-                  <td className="border p-2">{proyecto.estado}</td>
-                  <td className="border p-2">{proyecto.fechaInicio}</td>
-                  <td className="border p-2">
-                    {proyecto.fechaFin || '—'}
-                  </td>
-                  <td className="border p-2">
-                    {proyecto.cliente?.nombre}
-                  </td>
-                </tr>
+               <tr key={proyecto.id}>
+  <td className="border p-2">{proyecto.nombre}</td>
+  <td className="border p-2">{proyecto.descripcion}</td>
+  <td className="border p-2 capitalize">{proyecto.estado}</td>
+  <td className="border p-2">
+    {proyecto.fechaInicio?.slice(0, 10)}
+  </td>
+  <td className="border p-2">
+    {proyecto.fechaFin
+      ? proyecto.fechaFin.slice(0, 10)
+      : '—'}
+  </td>
+  <td className="border p-2">{proyecto.cliente?.nombre}</td>
+</tr>
               ))}
             </tbody>
           </table>
