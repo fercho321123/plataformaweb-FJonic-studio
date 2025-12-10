@@ -26,6 +26,7 @@ export class Usuario {
   @Column()
   password: string;
 
+  // ✅ ROL CORRECTO Y FUNCIONAL PARA PERMISOS
   @Column({
     type: 'enum',
     enum: RolUsuario,
@@ -41,5 +42,5 @@ export class Usuario {
 
   @UpdateDateColumn()
   actualizadoEn: Date;
-  
 }
+
