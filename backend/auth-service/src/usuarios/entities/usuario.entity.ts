@@ -41,4 +41,5 @@ export class Usuario {
 
   @UpdateDateColumn()
   actualizadoEn: Date;
+  
 }

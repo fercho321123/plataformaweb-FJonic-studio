@@ -14,7 +14,7 @@ interface Proyecto {
   nombre: string;
   descripcion: string;
   estado: 'pendiente' | 'iniciado' | 'finalizado';
-  fechaInicio: string;
+  fechaInicio?: string;
   fechaFin?: string;
   cliente: {
     id: string;
@@ -22,22 +22,28 @@ interface Proyecto {
   };
 }
 
-
 export default function ProyectosPage() {
   const [proyectos, setProyectos] = useState<Proyecto[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState('');
+
+  // ✅ EDICIÓN
+  const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [editNombre, setEditNombre] = useState('');
+  const [editDescripcion, setEditDescripcion] = useState('');
+  const [editClienteId, setEditClienteId] = useState('');
 
   // FORMULARIO
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
-  const [estado, setEstado] = useState('pendiente');
+  const [estado, setEstado] =
+    useState<'pendiente' | 'iniciado' | 'finalizado'>('pendiente');
   const [fechaInicio, setFechaInicio] = useState('');
   const [fechaFin, setFechaFin] = useState('');
   const [clienteId, setClienteId] = useState('');
 
-  // CARGAR PROYECTOS
   const cargarProyectos = async () => {
     try {
       setLoading(true);
@@ -50,7 +56,6 @@ export default function ProyectosPage() {
     }
   };
 
-  // CARGAR CLIENTES
   const cargarClientes = async () => {
     try {
       const data = await apiFetch('/clientes');
@@ -99,7 +104,7 @@ export default function ProyectosPage() {
     <div>
       <h1 className="text-2xl font-bold mb-6">Gestión de Proyectos</h1>
 
-      {/* FORMULARIO */}
+      {/* ✅ FORMULARIO */}
       <form
         onSubmit={handleSubmit}
         className="bg-white p-6 rounded-xl shadow-md mb-10 max-w-xl"
@@ -131,8 +136,9 @@ export default function ProyectosPage() {
         <select
           className="w-full border p-2 rounded mb-3"
           value={estado}
-          onChange={(e) => setEstado(e.target.value)}
-          required
+          onChange={(e) =>
+            setEstado(e.target.value as 'pendiente' | 'iniciado' | 'finalizado')
+          }
         >
           <option value="pendiente">Pendiente</option>
           <option value="iniciado">Iniciado</option>
@@ -154,22 +160,20 @@ export default function ProyectosPage() {
           onChange={(e) => setFechaFin(e.target.value)}
         />
 
-{/* SELECT DE CLIENTES (AUTOMÁTICO) */}
-<label className="block text-sm font-medium mb-1">Cliente</label>
-<select
-  className="w-full border p-2 rounded mb-3"
-  value={clienteId}
-  onChange={(e) => setClienteId(e.target.value)}
-  required
->
-  <option value="">-- Selecciona un cliente --</option>
-  {clientes.map((c) => (
-    <option key={c.id} value={c.id}>
-      {c.nombre} — {c.email} ({c.id.slice(0, 8)})
-    </option>
-  ))}
-</select>
-
+        <label className="block text-sm font-medium mb-1">Cliente</label>
+        <select
+          className="w-full border p-2 rounded mb-3"
+          value={clienteId}
+          onChange={(e) => setClienteId(e.target.value)}
+          required
+        >
+          <option value="">-- Selecciona un cliente --</option>
+          {clientes.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.nombre} — {c.email}
+            </option>
+          ))}
+        </select>
 
         <button
           type="submit"
@@ -179,46 +183,191 @@ export default function ProyectosPage() {
         </button>
       </form>
 
-
-
-      {/* LISTADO DE PROYECTOS */}
+      {/* ✅ LISTADO */}
       <div className="bg-white p-6 rounded-xl shadow-md">
         <h2 className="text-lg font-semibold mb-4">Listado de Proyectos</h2>
 
+        <select
+          value={filtroEstado}
+          onChange={(e) => setFiltroEstado(e.target.value)}
+          className="border p-2 rounded mb-4"
+        >
+          <option value="">Todos</option>
+          <option value="pendiente">Pendientes</option>
+          <option value="iniciado">Iniciados</option>
+          <option value="finalizado">Finalizados</option>
+        </select>
+
         {loading ? (
           <p>Cargando proyectos...</p>
-        ) : proyectos.length === 0 ? (
-          <p>No hay proyectos registrados</p>
         ) : (
           <table className="w-full border text-sm">
             <thead>
-  <tr className="bg-gray-100">
-    <th className="border p-2">Proyecto</th>
-    <th className="border p-2">Descripción</th>
-    <th className="border p-2">Estado</th>
-    <th className="border p-2">Inicio</th>
-    <th className="border p-2">Fin</th>
-    <th className="border p-2">Cliente</th>
-  </tr>
-</thead>
+              <tr className="bg-gray-100">
+                <th className="border p-2">Proyecto</th>
+                <th className="border p-2">Descripción</th>
+                <th className="border p-2">Estado</th>
+                <th className="border p-2">Inicio</th>
+                <th className="border p-2">Fin</th>
+                <th className="border p-2">Cliente</th>
+                <th className="border p-2">Acciones</th>
+              </tr>
+            </thead>
 
             <tbody>
-              {proyectos.map((proyecto) => (
-               <tr key={proyecto.id}>
-  <td className="border p-2">{proyecto.nombre}</td>
-  <td className="border p-2">{proyecto.descripcion}</td>
-  <td className="border p-2 capitalize">{proyecto.estado}</td>
-  <td className="border p-2">
-    {proyecto.fechaInicio?.slice(0, 10)}
-  </td>
-  <td className="border p-2">
-    {proyecto.fechaFin
-      ? proyecto.fechaFin.slice(0, 10)
-      : '—'}
-  </td>
-  <td className="border p-2">{proyecto.cliente?.nombre}</td>
-</tr>
-              ))}
+              {proyectos
+                .filter((p) =>
+                  filtroEstado ? p.estado === filtroEstado : true
+                )
+                .map((proyecto) => (
+                  <tr key={proyecto.id}>
+                    <td className="border p-2">
+                      {editandoId === proyecto.id ? (
+                        <input
+                          value={editNombre}
+                          onChange={(e) => setEditNombre(e.target.value)}
+                          className="border p-1 rounded w-full"
+                        />
+                      ) : (
+                        proyecto.nombre
+                      )}
+                    </td>
+
+                    <td className="border p-2">
+                      {editandoId === proyecto.id ? (
+                        <input
+                          value={editDescripcion}
+                          onChange={(e) =>
+                            setEditDescripcion(e.target.value)
+                          }
+                          className="border p-1 rounded w-full"
+                        />
+                      ) : (
+                        proyecto.descripcion
+                      )}
+                    </td>
+
+                    <td className="border p-2">
+                      <select
+                        value={proyecto.estado}
+                        onChange={async (e) => {
+                          await apiFetch(`/proyectos/${proyecto.id}`, {
+                            method: 'PATCH',
+                            body: JSON.stringify({
+                              estado: e.target.value,
+                            }),
+                          });
+                          cargarProyectos();
+                        }}
+                        className="border p-1 rounded"
+                      >
+                        <option value="pendiente">Pendiente</option>
+                        <option value="iniciado">Iniciado</option>
+                        <option value="finalizado">Finalizado</option>
+                      </select>
+                    </td>
+
+                    <td className="border p-2">
+                      {proyecto.fechaInicio?.slice(0, 10) || '—'}
+                    </td>
+
+                    <td className="border p-2">
+                      <input
+                        type="date"
+                        defaultValue={proyecto.fechaFin?.slice(0, 10) || ''}
+                        onBlur={async (e) => {
+                          await apiFetch(`/proyectos/${proyecto.id}`, {
+                            method: 'PATCH',
+                            body: JSON.stringify({
+                              fechaFin: e.target.value || null,
+                            }),
+                          });
+                          cargarProyectos();
+                        }}
+                        className="border p-1 rounded"
+                      />
+                    </td>
+
+                    <td className="border p-2">
+                      {editandoId === proyecto.id ? (
+                        <select
+                          value={editClienteId}
+                          onChange={(e) =>
+                            setEditClienteId(e.target.value)
+                          }
+                          className="border p-1 rounded w-full"
+                        >
+                          {clientes.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.nombre}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        proyecto.cliente?.nombre
+                      )}
+                    </td>
+
+                    <td className="border p-2 space-x-2 text-center">
+                      {editandoId === proyecto.id ? (
+                        <button
+                          onClick={async () => {
+                            await apiFetch(
+                              `/proyectos/${proyecto.id}`,
+                              {
+                                method: 'PATCH',
+                                body: JSON.stringify({
+                                  nombre: editNombre,
+                                  descripcion: editDescripcion,
+                                  clienteId: editClienteId,
+                                }),
+                              }
+                            );
+
+                            setEditandoId(null);
+                            cargarProyectos();
+                          }}
+                          className="bg-green-600 text-white px-3 py-1 rounded"
+                        >
+                          Guardar
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setEditandoId(proyecto.id);
+                            setEditNombre(proyecto.nombre);
+                            setEditDescripcion(proyecto.descripcion);
+                            setEditClienteId(proyecto.cliente?.id);
+                          }}
+                          className="bg-blue-600 text-white px-3 py-1 rounded"
+                        >
+                          Editar
+                        </button>
+                      )}
+
+                      <button
+                        onClick={async () => {
+                          if (
+                            !confirm(
+                              '¿Seguro que deseas eliminar este proyecto?'
+                            )
+                          )
+                            return;
+
+                          await apiFetch(
+                            `/proyectos/${proyecto.id}`,
+                            { method: 'DELETE' }
+                          );
+
+                          cargarProyectos();
+                        }}
+                        className="bg-red-600 text-white px-3 py-1 rounded"
+                      >
+                        Eliminar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         )}

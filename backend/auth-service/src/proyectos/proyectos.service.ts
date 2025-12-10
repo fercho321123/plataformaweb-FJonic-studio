@@ -1,4 +1,3 @@
-
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -18,7 +17,7 @@ export class ProyectosService {
   // ✅ CREAR PROYECTO
   async crear(data: any): Promise<Proyecto> {
     const cliente = await this.clienteRepo.findOne({
-      where: { id: data.clienteId }, // ✅ ya no da error
+      where: { id: data.clienteId },
     });
 
     if (!cliente) {
@@ -41,7 +40,7 @@ export class ProyectosService {
         ? new Date(data.fechaInicio)
         : new Date();
 
-    // ✅ FECHA FIN (sí puede ser NULL)
+    // ✅ FECHA FIN (SÍ puede ser NULL)
      proyecto.fechaFin = data.fechaFin as any;
 
     proyecto.cliente = cliente;
@@ -83,21 +82,23 @@ export class ProyectosService {
     if (data.nombre !== undefined) proyecto.nombre = data.nombre;
     if (data.descripcion !== undefined) proyecto.descripcion = data.descripcion;
 
+    // ✅ ESTADO CONTROLADO
     if (['pendiente', 'iniciado', 'finalizado'].includes(data.estado)) {
       proyecto.estado = data.estado;
     }
 
-    if (data.fechaInicio) {
+    // ✅ FECHA INICIO
+    if (data.fechaInicio && data.fechaInicio !== '') {
       proyecto.fechaInicio = new Date(data.fechaInicio);
     }
 
-    if (data.fechaFin !== undefined) {
+    // ✅ FECHA FIN (SE PUEDE LIMPIAR)
+    if (data.fechaFin === '' || data.fechaFin === null) {
        proyecto.fechaFin = data.fechaFin as any;
+    } else if (data.fechaFin) {
+      proyecto.fechaFin = new Date(data.fechaFin);
     }
 
     return await this.proyectoRepo.save(proyecto);
   }
 }
-
-
-
