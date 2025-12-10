@@ -1,5 +1,6 @@
 'use client';
 
+import { useAuth } from '@/context/AuthContext';
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 
@@ -23,19 +24,14 @@ interface Proyecto {
 }
 
 export default function ProyectosPage() {
+  const { usuario } = useAuth();
+
   const [proyectos, setProyectos] = useState<Proyecto[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filtroEstado, setFiltroEstado] = useState('');
 
-  // ✅ EDICIÓN
-  const [editandoId, setEditandoId] = useState<string | null>(null);
-  const [editNombre, setEditNombre] = useState('');
-  const [editDescripcion, setEditDescripcion] = useState('');
-  const [editClienteId, setEditClienteId] = useState('');
-
-  // FORMULARIO
+  // ✅ CREAR
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [estado, setEstado] =
@@ -44,25 +40,21 @@ export default function ProyectosPage() {
   const [fechaFin, setFechaFin] = useState('');
   const [clienteId, setClienteId] = useState('');
 
+  // ✅ EDITAR
+  const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [editNombre, setEditNombre] = useState('');
+  const [editDescripcion, setEditDescripcion] = useState('');
+  const [editClienteId, setEditClienteId] = useState('');
+
   const cargarProyectos = async () => {
-    try {
-      setLoading(true);
-      const data = await apiFetch('/proyectos');
-      setProyectos(data);
-    } catch {
-      setError('Error al cargar proyectos');
-    } finally {
-      setLoading(false);
-    }
+    const data = await apiFetch('/proyectos');
+    setProyectos(data);
+    setLoading(false);
   };
 
   const cargarClientes = async () => {
-    try {
-      const data = await apiFetch('/clientes');
-      setClientes(data);
-    } catch {
-      console.error('Error al cargar clientes');
-    }
+    const data = await apiFetch('/clientes');
+    setClientes(data);
   };
 
   useEffect(() => {
@@ -70,307 +62,283 @@ export default function ProyectosPage() {
     cargarClientes();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
-    try {
-      await apiFetch('/proyectos', {
-        method: 'POST',
-        body: JSON.stringify({
-          nombre,
-          descripcion,
-          estado,
-          fechaInicio: fechaInicio || null,
-          fechaFin: fechaFin || null,
-          clienteId,
-        }),
-      });
-
-      setNombre('');
-      setDescripcion('');
-      setEstado('pendiente');
-      setFechaInicio('');
-      setFechaFin('');
-      setClienteId('');
-
-      await cargarProyectos();
-    } catch {
-      setError('Error al crear proyecto');
-    }
-  };
-
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Gestión de Proyectos</h1>
 
-      {/* ✅ FORMULARIO */}
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white p-6 rounded-xl shadow-md mb-10 max-w-xl"
-      >
-        <h2 className="text-lg font-semibold mb-4">Crear proyecto</h2>
+      {/* ✅ FORMULARIO CREAR */}
+      {usuario?.rol !== 'cliente' && (
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            setError('');
 
-        {error && (
-          <p className="bg-red-100 text-red-700 p-2 rounded mb-4 text-sm">
-            {error}
-          </p>
-        )}
+            try {
+              await apiFetch('/proyectos', {
+                method: 'POST',
+                body: JSON.stringify({
+                  nombre,
+                  descripcion,
+                  estado,
+                  fechaInicio,
+                  fechaFin: fechaFin || null,
+                  clienteId,
+                }),
+              });
 
-        <input
-          className="w-full border p-2 rounded mb-3"
-          placeholder="Nombre del proyecto"
-          value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
-          required
-        />
+              setNombre('');
+              setDescripcion('');
+              setEstado('pendiente');
+              setFechaInicio('');
+              setFechaFin('');
+              setClienteId('');
 
-        <input
-          className="w-full border p-2 rounded mb-3"
-          placeholder="Descripción"
-          value={descripcion}
-          onChange={(e) => setDescripcion(e.target.value)}
-          required
-        />
-
-        <select
-          className="w-full border p-2 rounded mb-3"
-          value={estado}
-          onChange={(e) =>
-            setEstado(e.target.value as 'pendiente' | 'iniciado' | 'finalizado')
-          }
+              cargarProyectos();
+            } catch {
+              setError('Error al crear proyecto');
+            }
+          }}
+          className="bg-white p-6 rounded mb-10 max-w-xl"
         >
-          <option value="pendiente">Pendiente</option>
-          <option value="iniciado">Iniciado</option>
-          <option value="finalizado">Finalizado</option>
-        </select>
+          <h2 className="font-semibold mb-4">Crear Proyecto</h2>
 
-        <input
-          type="date"
-          className="w-full border p-2 rounded mb-3"
-          value={fechaInicio}
-          onChange={(e) => setFechaInicio(e.target.value)}
-          required
-        />
+          {error && (
+            <p className="bg-red-100 text-red-700 p-2 rounded mb-3 text-sm">
+              {error}
+            </p>
+          )}
 
-        <input
-          type="date"
-          className="w-full border p-2 rounded mb-3"
-          value={fechaFin}
-          onChange={(e) => setFechaFin(e.target.value)}
-        />
+          <input
+            className="w-full border p-2 mb-3"
+            placeholder="Nombre"
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            required
+          />
 
-        <label className="block text-sm font-medium mb-1">Cliente</label>
-        <select
-          className="w-full border p-2 rounded mb-3"
-          value={clienteId}
-          onChange={(e) => setClienteId(e.target.value)}
-          required
+          <textarea
+            className="w-full border p-2 mb-3"
+            placeholder="Descripción"
+            value={descripcion}
+            onChange={(e) => setDescripcion(e.target.value)}
+            required
+          />
+
+          <select
+            className="w-full border p-2 mb-3"
+            value={estado}
+            onChange={(e) =>
+              setEstado(e.target.value as 'pendiente' | 'iniciado' | 'finalizado')
+            }
+          >
+            <option value="pendiente">Pendiente</option>
+            <option value="iniciado">Iniciado</option>
+            <option value="finalizado">Finalizado</option>
+          </select>
+
+          <input
+            type="date"
+            className="w-full border p-2 mb-3"
+            value={fechaInicio}
+            onChange={(e) => setFechaInicio(e.target.value)}
+          />
+
+          <input
+            type="date"
+            className="w-full border p-2 mb-3"
+            value={fechaFin}
+            onChange={(e) => setFechaFin(e.target.value)}
+          />
+
+          <select
+            className="w-full border p-2 mb-4"
+            value={clienteId}
+            onChange={(e) => setClienteId(e.target.value)}
+            required
+          >
+            <option value="">Seleccionar cliente</option>
+            {clientes.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nombre}
+              </option>
+            ))}
+          </select>
+
+          <button className="bg-black text-white px-4 py-2 rounded">
+            Crear proyecto
+          </button>
+        </form>
+      )}
+
+      {/* ✅ FORMULARIO EDITAR */}
+      {editandoId && (
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+
+            await apiFetch(`/proyectos/${editandoId}`, {
+              method: 'PATCH',
+              body: JSON.stringify({
+                nombre: editNombre,
+                descripcion: editDescripcion,
+                clienteId: editClienteId,
+              }),
+            });
+
+            setEditandoId(null);
+            cargarProyectos();
+          }}
+          className="bg-yellow-50 p-6 rounded mb-10 max-w-xl border"
         >
-          <option value="">-- Selecciona un cliente --</option>
-          {clientes.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.nombre} — {c.email}
-            </option>
-          ))}
-        </select>
+          <h2 className="font-semibold mb-4">Editar Proyecto</h2>
 
-        <button
-          type="submit"
-          className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
-        >
-          Crear Proyecto
-        </button>
-      </form>
+          <input
+            className="w-full border p-2 mb-3"
+            value={editNombre}
+            onChange={(e) => setEditNombre(e.target.value)}
+            required
+          />
+
+          <textarea
+            className="w-full border p-2 mb-3"
+            value={editDescripcion}
+            onChange={(e) => setEditDescripcion(e.target.value)}
+            required
+          />
+
+          <select
+            className="w-full border p-2 mb-4"
+            value={editClienteId}
+            onChange={(e) => setEditClienteId(e.target.value)}
+            required
+          >
+            {clientes.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nombre}
+              </option>
+            ))}
+          </select>
+
+          <div className="flex gap-3">
+            <button className="bg-green-700 text-white px-4 py-2 rounded">
+              Guardar
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setEditandoId(null)}
+              className="bg-gray-600 text-white px-4 py-2 rounded"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      )}
 
       {/* ✅ LISTADO */}
-      <div className="bg-white p-6 rounded-xl shadow-md">
-        <h2 className="text-lg font-semibold mb-4">Listado de Proyectos</h2>
+      <div className="bg-white p-6 rounded">
+        <table className="w-full border text-sm">
+          <thead>
+            <tr>
+              <th>Proyecto</th>
+              <th>Descripción</th>
+              <th>Estado</th>
+              <th>Inicio</th>
+              <th>Fin</th>
+              <th>Cliente</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
 
-        <select
-          value={filtroEstado}
-          onChange={(e) => setFiltroEstado(e.target.value)}
-          className="border p-2 rounded mb-4"
-        >
-          <option value="">Todos</option>
-          <option value="pendiente">Pendientes</option>
-          <option value="iniciado">Iniciados</option>
-          <option value="finalizado">Finalizados</option>
-        </select>
+          <tbody>
+            {proyectos.map((proyecto) => (
+              <tr key={proyecto.id}>
+                <td>{proyecto.nombre}</td>
+                <td>{proyecto.descripcion}</td>
 
-        {loading ? (
-          <p>Cargando proyectos...</p>
-        ) : (
-          <table className="w-full border text-sm">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="border p-2">Proyecto</th>
-                <th className="border p-2">Descripción</th>
-                <th className="border p-2">Estado</th>
-                <th className="border p-2">Inicio</th>
-                <th className="border p-2">Fin</th>
-                <th className="border p-2">Cliente</th>
-                <th className="border p-2">Acciones</th>
+                <td>
+                  {usuario?.rol === 'cliente' ? (
+                    proyecto.estado
+                  ) : (
+                    <select
+                      value={proyecto.estado}
+                      onChange={async (e) => {
+                        await apiFetch(`/proyectos/${proyecto.id}`, {
+                          method: 'PATCH',
+                          body: JSON.stringify({
+                            estado: e.target.value,
+                          }),
+                        });
+                        cargarProyectos();
+                      }}
+                    >
+                      <option value="pendiente">Pendiente</option>
+                      <option value="iniciado">Iniciado</option>
+                      <option value="finalizado">Finalizado</option>
+                    </select>
+                  )}
+                </td>
+
+                <td>{proyecto.fechaInicio?.slice(0, 10)}</td>
+
+                <td>
+                  {usuario?.rol === 'cliente' ? (
+                    proyecto.fechaFin?.slice(0, 10) || '—'
+                  ) : (
+                    <input
+                      type="date"
+                      defaultValue={proyecto.fechaFin?.slice(0, 10) || ''}
+                      onBlur={async (e) => {
+                        await apiFetch(`/proyectos/${proyecto.id}`, {
+                          method: 'PATCH',
+                          body: JSON.stringify({
+                            fechaFin: e.target.value || null,
+                          }),
+                        });
+                        cargarProyectos();
+                      }}
+                    />
+                  )}
+                </td>
+
+                <td>{proyecto.cliente?.nombre}</td>
+
+                <td className="space-x-2">
+                  {usuario?.rol !== 'cliente' && (
+                    <button
+                      onClick={() => {
+                        setEditandoId(proyecto.id);
+                        setEditNombre(proyecto.nombre);
+                        setEditDescripcion(proyecto.descripcion);
+                        setEditClienteId(proyecto.cliente.id);
+                      }}
+                      className="bg-blue-600 text-white px-3 py-1 rounded"
+                    >
+                      Editar
+                    </button>
+                  )}
+
+                  {usuario?.rol === 'admin' && (
+                    <button
+                      onClick={async () => {
+                        if (!confirm('¿Eliminar proyecto?')) return;
+                        await apiFetch(`/proyectos/${proyecto.id}`, {
+                          method: 'DELETE',
+                        });
+                        cargarProyectos();
+                      }}
+                      className="bg-red-600 text-white px-3 py-1 rounded"
+                    >
+                      Eliminar
+                    </button>
+                  )}
+                </td>
               </tr>
-            </thead>
+            ))}
+          </tbody>
+        </table>
 
-            <tbody>
-              {proyectos
-                .filter((p) =>
-                  filtroEstado ? p.estado === filtroEstado : true
-                )
-                .map((proyecto) => (
-                  <tr key={proyecto.id}>
-                    <td className="border p-2">
-                      {editandoId === proyecto.id ? (
-                        <input
-                          value={editNombre}
-                          onChange={(e) => setEditNombre(e.target.value)}
-                          className="border p-1 rounded w-full"
-                        />
-                      ) : (
-                        proyecto.nombre
-                      )}
-                    </td>
-
-                    <td className="border p-2">
-                      {editandoId === proyecto.id ? (
-                        <input
-                          value={editDescripcion}
-                          onChange={(e) =>
-                            setEditDescripcion(e.target.value)
-                          }
-                          className="border p-1 rounded w-full"
-                        />
-                      ) : (
-                        proyecto.descripcion
-                      )}
-                    </td>
-
-                    <td className="border p-2">
-                      <select
-                        value={proyecto.estado}
-                        onChange={async (e) => {
-                          await apiFetch(`/proyectos/${proyecto.id}`, {
-                            method: 'PATCH',
-                            body: JSON.stringify({
-                              estado: e.target.value,
-                            }),
-                          });
-                          cargarProyectos();
-                        }}
-                        className="border p-1 rounded"
-                      >
-                        <option value="pendiente">Pendiente</option>
-                        <option value="iniciado">Iniciado</option>
-                        <option value="finalizado">Finalizado</option>
-                      </select>
-                    </td>
-
-                    <td className="border p-2">
-                      {proyecto.fechaInicio?.slice(0, 10) || '—'}
-                    </td>
-
-                    <td className="border p-2">
-                      <input
-                        type="date"
-                        defaultValue={proyecto.fechaFin?.slice(0, 10) || ''}
-                        onBlur={async (e) => {
-                          await apiFetch(`/proyectos/${proyecto.id}`, {
-                            method: 'PATCH',
-                            body: JSON.stringify({
-                              fechaFin: e.target.value || null,
-                            }),
-                          });
-                          cargarProyectos();
-                        }}
-                        className="border p-1 rounded"
-                      />
-                    </td>
-
-                    <td className="border p-2">
-                      {editandoId === proyecto.id ? (
-                        <select
-                          value={editClienteId}
-                          onChange={(e) =>
-                            setEditClienteId(e.target.value)
-                          }
-                          className="border p-1 rounded w-full"
-                        >
-                          {clientes.map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.nombre}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        proyecto.cliente?.nombre
-                      )}
-                    </td>
-
-                    <td className="border p-2 space-x-2 text-center">
-                      {editandoId === proyecto.id ? (
-                        <button
-                          onClick={async () => {
-                            await apiFetch(
-                              `/proyectos/${proyecto.id}`,
-                              {
-                                method: 'PATCH',
-                                body: JSON.stringify({
-                                  nombre: editNombre,
-                                  descripcion: editDescripcion,
-                                  clienteId: editClienteId,
-                                }),
-                              }
-                            );
-
-                            setEditandoId(null);
-                            cargarProyectos();
-                          }}
-                          className="bg-green-600 text-white px-3 py-1 rounded"
-                        >
-                          Guardar
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            setEditandoId(proyecto.id);
-                            setEditNombre(proyecto.nombre);
-                            setEditDescripcion(proyecto.descripcion);
-                            setEditClienteId(proyecto.cliente?.id);
-                          }}
-                          className="bg-blue-600 text-white px-3 py-1 rounded"
-                        >
-                          Editar
-                        </button>
-                      )}
-
-                      <button
-                        onClick={async () => {
-                          if (
-                            !confirm(
-                              '¿Seguro que deseas eliminar este proyecto?'
-                            )
-                          )
-                            return;
-
-                          await apiFetch(
-                            `/proyectos/${proyecto.id}`,
-                            { method: 'DELETE' }
-                          );
-
-                          cargarProyectos();
-                        }}
-                        className="bg-red-600 text-white px-3 py-1 rounded"
-                      >
-                        Eliminar
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        )}
+        {loading && <p className="mt-4">Cargando proyectos...</p>}
       </div>
     </div>
   );
