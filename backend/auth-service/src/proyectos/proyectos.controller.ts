@@ -9,7 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ProyectosService } from './proyectos.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 
@@ -32,17 +32,16 @@ export class ProyectosController {
   }
 
   // ✅ SOLO ADMIN puede eliminar
-  @Delete(':id')
-  @Roles('admin')
-  eliminar(@Param('id') id: string) {
-    return this.proyectosService.eliminar(Number(id));
-  }
+@Delete(':id')
+@Roles('admin')
+eliminar(@Param('id') id: string) {
+  return this.proyectosService.eliminar(Number(id));
+}
 
-  // ✅ ADMIN y STAFF pueden editar
-  @Patch(':id')
-  @Roles('admin', 'staff')
-  actualizar(@Param('id') id: string, @Body() body: any) {
-    return this.proyectosService.actualizar(Number(id), body);
-  }
+@Patch(':id')
+@Roles('admin', 'staff')
+actualizar(@Param('id') id: string, @Body() body: any) {
+  return this.proyectosService.actualizar(Number(id), body);
+}
 }
 

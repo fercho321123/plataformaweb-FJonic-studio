@@ -34,14 +34,14 @@ export class ProyectosService {
       ? data.estado
       : 'pendiente';
 
-    // ✅ FECHA INICIO (nunca queda NULL)
+    // ✅ FECHA INICIO
     proyecto.fechaInicio =
       data.fechaInicio && data.fechaInicio !== ''
         ? new Date(data.fechaInicio)
         : new Date();
 
-    // ✅ FECHA FIN (SÍ puede ser NULL)
-     proyecto.fechaFin = data.fechaFin as any;
+    // ✅ FECHA FIN (COMO TÚ LO PEDISTE)
+    proyecto.fechaFin = data.fechaFin as any;
 
     proyecto.cliente = cliente;
 
@@ -55,7 +55,7 @@ export class ProyectosService {
     });
   }
 
-  // ✅ ELIMINAR PROYECTO
+  // ✅ ELIMINAR PROYECTO (ID = NUMBER)
   async eliminar(id: number) {
     const proyecto = await this.proyectoRepo.findOne({
       where: { id },
@@ -68,7 +68,7 @@ export class ProyectosService {
     return await this.proyectoRepo.remove(proyecto);
   }
 
-  // ✅ ACTUALIZAR PROYECTO (PATCH)
+  // ✅ ACTUALIZAR PROYECTO (ID = NUMBER)
   async actualizar(id: number, data: any): Promise<Proyecto> {
     const proyecto = await this.proyectoRepo.findOne({
       where: { id },
@@ -92,13 +92,12 @@ export class ProyectosService {
       proyecto.fechaInicio = new Date(data.fechaInicio);
     }
 
-    // ✅ FECHA FIN (SE PUEDE LIMPIAR)
-    if (data.fechaFin === '' || data.fechaFin === null) {
-       proyecto.fechaFin = data.fechaFin as any;
-    } else if (data.fechaFin) {
-      proyecto.fechaFin = new Date(data.fechaFin);
-    }
+    // ✅ FECHA FIN (FORZADA COMO PEDISTE)
+    proyecto.fechaFin = data.fechaFin as any;
 
     return await this.proyectoRepo.save(proyecto);
   }
 }
+
+
+

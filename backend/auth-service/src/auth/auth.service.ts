@@ -15,38 +15,45 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  // ✅ LOGIN
-  async login(email: string, password: string) {
-    const usuario = await this.usuariosService.buscarPorEmail(email);
+async login(email: string, password: string) {
+  console.log('EMAIL RECIBIDO:', email);
+  console.log('PASSWORD RECIBIDO:', password);
 
-    if (!usuario) {
-      throw new UnauthorizedException('Credenciales inválidas');
-    }
+  const usuario = await this.usuariosService.buscarPorEmail(email);
 
-    const passwordValido = await bcrypt.compare(password, usuario.password);
+  console.log('USUARIO EN BD:', usuario);
 
-    if (!passwordValido) {
-      throw new UnauthorizedException('Credenciales inválidas');
-    }
-
-    const payload = {
-      sub: usuario.id,
-      email: usuario.email,
-      rol: usuario.rol,
-    };
-
-    return {
-      access_token: this.jwtService.sign(payload),
-      usuario: {
-        id: usuario.id,
-        nombre: usuario.nombre,
-        email: usuario.email,
-        rol: usuario.rol,
-      },
-    };
+  if (!usuario) {
+    throw new UnauthorizedException('Credenciales inválidas');
   }
 
-  // ✅ REGISTER (CREAR USUARIO CON ROL)
+  const passwordValido = await bcrypt.compare(password, usuario.password);
+
+  console.log('PASSWORD VALIDO:', passwordValido);
+
+  if (!passwordValido) {
+    throw new UnauthorizedException('Credenciales inválidas');
+  }
+
+  const payload = {
+    sub: usuario.id,
+    email: usuario.email,
+    rol: usuario.rol,
+  };
+
+  return {
+    access_token: this.jwtService.sign(payload),
+    usuario: {
+      id: usuario.id,
+      nombre: usuario.nombre,
+      email: usuario.email,
+      rol: usuario.rol,
+    },
+  };
+}
+
+
+  // ✅ REGISTER BLINDADO (EL HASH SE HACE AQUÍ)
   async register(body: {
     nombre: string;
     email: string;
@@ -55,18 +62,18 @@ export class AuthService {
   }) {
     const { nombre, email, password, rol } = body;
 
-    // ✅ Verificar si ya existe
     const existe = await this.usuariosService.buscarPorEmail(email);
-
     if (existe) {
       throw new BadRequestException('El usuario ya existe');
     }
 
-    // ✅ AQUÍ NO SE HASHEA — ya lo hace UsuariosService
+    // ✅ HASH CORRECTO AQUÍ (NUNCA EN PLANO)
+    const passwordHash = await bcrypt.hash(password, 10);
+
     const usuario = await this.usuariosService.crear({
       nombre,
       email,
-      password, // ✅ SE ENVÍA EN PLANO
+      password: passwordHash, // ✅ AQUÍ VA HASHEADO
       rol,
     });
 

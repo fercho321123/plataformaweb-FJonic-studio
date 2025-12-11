@@ -1,6 +1,5 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LoginDto } from './dto/login.dto';
 import { RolUsuario } from '../usuarios/entities/usuario.entity';
 
 @Controller('auth')
@@ -9,11 +8,11 @@ export class AuthController {
 
   // ✅ LOGIN
   @Post('login')
-  login(@Body() dto: LoginDto) {
-    return this.authService.login(dto.email, dto.password);
+  login(@Body() body: { email: string; password: string }) {
+    return this.authService.login(body.email, body.password);
   }
 
-  // ✅ REGISTER (ADMIN | STAFF | CLIENTE)
+  // ✅ REGISTER
   @Post('register')
   register(
     @Body()
@@ -21,13 +20,10 @@ export class AuthController {
       nombre: string;
       email: string;
       password: string;
-      rol: 'admin' | 'staff' | 'cliente';
+      rol: RolUsuario; // ✅ YA NO STRING SUELTO
     },
   ) {
-    return this.authService.register({
-      ...body,
-      rol: body.rol as RolUsuario, // ✅ CONVERSIÓN CORRECTA
-    });
+    return this.authService.register(body); // ✅ SIN as any
   }
 }
 

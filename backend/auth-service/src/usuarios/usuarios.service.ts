@@ -12,7 +12,7 @@ export class UsuariosService {
     private readonly usuarioRepository: Repository<Usuario>,
   ) {}
 
-  // ✅ MÉTODO ORIGINAL (solo CLIENTE)
+  // ✅ REGISTRO PÚBLICO (SOLO CLIENTE)
   async crearUsuario(dto: CrearUsuarioDto): Promise<Usuario> {
     const existe = await this.usuarioRepository.findOne({
       where: { email: dto.email },
@@ -22,19 +22,20 @@ export class UsuariosService {
       throw new BadRequestException('El correo ya está registrado');
     }
 
+    // ✅ HASH SEGURO
     const passwordHash = await bcrypt.hash(dto.password, 10);
 
     const usuario = this.usuarioRepository.create({
       nombre: dto.nombre,
       email: dto.email,
       password: passwordHash,
-      rol: RolUsuario.CLIENTE, // ✅ siempre cliente
+      rol: RolUsuario.CLIENTE, // ✅ siempre cliente desde registro público
     });
 
     return this.usuarioRepository.save(usuario);
   }
 
-  // ✅ NUEVO MÉTODO PARA AUTH REGISTER (ADMIN | STAFF | CLIENTE)
+  // ✅ REGISTRO DESDE AUTH (ADMIN | STAFF | CLIENTE)
   async crear(data: {
     nombre: string;
     email: string;
@@ -49,6 +50,7 @@ export class UsuariosService {
       throw new BadRequestException('El correo ya está registrado');
     }
 
+    // ✅ HASH SEGURO
     const passwordHash = await bcrypt.hash(data.password, 10);
 
     const usuario = this.usuarioRepository.create({
@@ -61,6 +63,7 @@ export class UsuariosService {
     return this.usuarioRepository.save(usuario);
   }
 
+  // ✅ LOGIN
   async buscarPorEmail(email: string): Promise<Usuario | null> {
     return this.usuarioRepository.findOne({
       where: { email },

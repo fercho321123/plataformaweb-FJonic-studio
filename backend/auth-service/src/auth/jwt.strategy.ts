@@ -5,14 +5,22 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(configService: ConfigService) {
+  constructor(private config: ConfigService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: configService.get('JWT_SECRET'),
+      ignoreExpiration: false,
+      secretOrKey: config.get<string>('JWT_SECRET') || 'secretKey', // usa tu env
     });
   }
 
+  // payload es lo que firmaste en AuthService.login (sub, email, rol)
   async validate(payload: any) {
-    return payload; // aquí queda disponible en req.user
+    // Aquí devolvemos lo que queramos que esté disponible en request.user
+    return {
+      id: payload.sub,
+      email: payload.email,
+      rol: payload.rol,
+    };
   }
 }
+
