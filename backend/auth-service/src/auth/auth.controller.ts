@@ -1,18 +1,19 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RolUsuario } from '../usuarios/entities/usuario.entity';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  // ✅ LOGIN
+  // LOGIN
   @Post('login')
   login(@Body() body: { email: string; password: string }) {
     return this.authService.login(body.email, body.password);
   }
 
-  // ✅ REGISTER
+  // REGISTER
   @Post('register')
   register(
     @Body()
@@ -20,10 +21,17 @@ export class AuthController {
       nombre: string;
       email: string;
       password: string;
-      rol: RolUsuario; // ✅ YA NO STRING SUELTO
+      rol: RolUsuario;
     },
   ) {
-    return this.authService.register(body); // ✅ SIN as any
+    return this.authService.register(body);
+  }
+
+  // GET USER FROM TOKEN
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  me(@Req() req: any) {
+    return req.user;
   }
 }
 

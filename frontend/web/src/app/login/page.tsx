@@ -12,39 +12,30 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
- const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setError('');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
 
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
-      {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
-      }
-    );
+      });
 
-    if (!res.ok) {
-      throw new Error('Credenciales incorrectas');
+      if (!res.ok) throw new Error('Credenciales incorrectas');
+
+      const data = await res.json();
+
+      login(data.access_token, data.usuario);
+
+      router.push('/dashboard');
+    } catch (err: any) {
+      setError(err.message || 'Error al iniciar sesión');
     }
-
-    const data = await res.json();
-    console.log('RESPUESTA REAL DEL BACKEND:', data);
-
-
-    login(data.access_token, data.usuario);
-
-
-    router.push('/dashboard');
-  } catch (err: any) {
-    setError(err.message || 'Error al iniciar sesión');
-  }
-};
-
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-black text-white">
@@ -79,4 +70,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

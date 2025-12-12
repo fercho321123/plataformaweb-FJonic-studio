@@ -12,17 +12,18 @@ export class Proyecto {
   @Column()
   descripcion: string;
 
-  // ESTO ES LO QUE PROBABLEMENTE FALTA O ESTÁ DIFERENTE
- @Column({ default: 'pendiente' })
+  @Column({ default: 'pendiente' })
   estado: string;
 
- @Column({ type: 'date', nullable: true })
-fechaInicio: Date;
+  @Column({ type: 'date', nullable: true })
+  fechaInicio: Date;
 
-@Column({ type: 'date', nullable: true })
-fechaFin: Date;
+  @Column({ type: 'date', nullable: true })
+  fechaFin: Date;
 
-
-  @ManyToOne(() => Cliente, (cliente) => cliente.proyectos)
-  cliente: Cliente;
+@ManyToOne(() => Cliente, (cliente) => cliente.proyectos, {
+  onDelete: 'CASCADE',
+})
+cliente: Cliente;
 }
+

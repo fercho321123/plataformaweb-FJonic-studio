@@ -5,8 +5,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { UsuariosModule } from '../usuarios/usuarios.module';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { RolesGuard } from './guards/roles.guard';
 import { AuthController } from './auth.controller';
 
 @Module({
@@ -23,9 +21,12 @@ import { AuthController } from './auth.controller';
     }),
     UsuariosModule,
   ],
-  controllers: [AuthController],  // 👈 FALTABA ESTO
-  providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard],
-  exports: [AuthService, JwtModule, JwtStrategy],
+  controllers: [AuthController],
+  providers: [
+    AuthService,
+    JwtStrategy, // solo este es necesario
+  ],
+  exports: [AuthService, JwtModule],
 })
 export class AuthModule {}
 

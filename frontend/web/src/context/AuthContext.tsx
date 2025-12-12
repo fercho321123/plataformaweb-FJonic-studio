@@ -35,19 +35,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Restaurar sesión correctamente al cargar la app
   useEffect(() => {
     try {
       const tokenGuardado = localStorage.getItem('token');
       const usuarioGuardado = localStorage.getItem('usuario');
 
-      if (tokenGuardado) {
-        setToken(tokenGuardado);
-      }
-
-      if (usuarioGuardado) {
-        setUsuario(JSON.parse(usuarioGuardado));
-      }
+      if (tokenGuardado) setToken(tokenGuardado);
+      if (usuarioGuardado) setUsuario(JSON.parse(usuarioGuardado));
     } catch (error) {
       console.error('Error restaurando sesión:', error);
       localStorage.removeItem('token');
@@ -57,7 +51,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // ✅ Login seguro
   const login = (token: string, usuario?: Usuario) => {
     setToken(token);
     localStorage.setItem('token', token);
@@ -68,7 +61,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // ✅ Logout limpio y completo
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('usuario');

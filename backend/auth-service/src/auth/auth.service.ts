@@ -15,45 +15,43 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-async login(email: string, password: string) {
-  console.log('EMAIL RECIBIDO:', email);
-  console.log('PASSWORD RECIBIDO:', password);
+  async login(email: string, password: string) {
+    console.log('EMAIL RECIBIDO:', email);
+    console.log('PASSWORD RECIBIDO:', password);
 
-  const usuario = await this.usuariosService.buscarPorEmail(email);
+    const usuario = await this.usuariosService.buscarPorEmail(email);
 
-  console.log('USUARIO EN BD:', usuario);
+    console.log('USUARIO EN BD:', usuario);
 
-  if (!usuario) {
-    throw new UnauthorizedException('Credenciales inválidas');
-  }
+    if (!usuario) {
+      throw new UnauthorizedException('Credenciales inválidas');
+    }
 
-  const passwordValido = await bcrypt.compare(password, usuario.password);
+    const passwordValido = await bcrypt.compare(password, usuario.password);
 
-  console.log('PASSWORD VALIDO:', passwordValido);
+    console.log('PASSWORD VALIDO:', passwordValido);
 
-  if (!passwordValido) {
-    throw new UnauthorizedException('Credenciales inválidas');
-  }
+    if (!passwordValido) {
+      throw new UnauthorizedException('Credenciales inválidas');
+    }
 
-  const payload = {
-    sub: usuario.id,
-    email: usuario.email,
-    rol: usuario.rol,
-  };
-
-  return {
-    access_token: this.jwtService.sign(payload),
-    usuario: {
-      id: usuario.id,
-      nombre: usuario.nombre,
+    const payload = {
+      sub: usuario.id,
       email: usuario.email,
       rol: usuario.rol,
-    },
-  };
-}
+    };
 
+    return {
+      access_token: this.jwtService.sign(payload),
+      usuario: {
+        id: usuario.id,
+        nombre: usuario.nombre,
+        email: usuario.email,
+        rol: usuario.rol,
+      },
+    };
+  }
 
-  // ✅ REGISTER BLINDADO (EL HASH SE HACE AQUÍ)
   async register(body: {
     nombre: string;
     email: string;
@@ -67,13 +65,12 @@ async login(email: string, password: string) {
       throw new BadRequestException('El usuario ya existe');
     }
 
-    // ✅ HASH CORRECTO AQUÍ (NUNCA EN PLANO)
     const passwordHash = await bcrypt.hash(password, 10);
 
     const usuario = await this.usuariosService.crear({
       nombre,
       email,
-      password: passwordHash, // ✅ AQUÍ VA HASHEADO
+      password: passwordHash, // ✔ viene hasheado
       rol,
     });
 
@@ -88,4 +85,5 @@ async login(email: string, password: string) {
     };
   }
 }
+
 

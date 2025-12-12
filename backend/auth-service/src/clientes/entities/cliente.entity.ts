@@ -32,8 +32,9 @@ export class Cliente {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  // ✅ RELACIÓN CON PROYECTOS (SI YA LA ESTÁS USANDO)
-  @OneToMany(() => Proyecto, (proyecto) => proyecto.cliente)
-  proyectos: Proyecto[];
+@OneToMany(() => Proyecto, (proyecto) => proyecto.cliente, {
+  cascade: ['remove'],
+})
+proyectos: Proyecto[];
 }
 

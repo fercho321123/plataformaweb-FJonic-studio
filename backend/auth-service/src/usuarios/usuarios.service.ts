@@ -12,7 +12,7 @@ export class UsuariosService {
     private readonly usuarioRepository: Repository<Usuario>,
   ) {}
 
-  // ✅ REGISTRO PÚBLICO (SOLO CLIENTE)
+  // Registro público (solo CLIENTE)
   async crearUsuario(dto: CrearUsuarioDto): Promise<Usuario> {
     const existe = await this.usuarioRepository.findOne({
       where: { email: dto.email },
@@ -22,24 +22,23 @@ export class UsuariosService {
       throw new BadRequestException('El correo ya está registrado');
     }
 
-    // ✅ HASH SEGURO
     const passwordHash = await bcrypt.hash(dto.password, 10);
 
     const usuario = this.usuarioRepository.create({
       nombre: dto.nombre,
       email: dto.email,
       password: passwordHash,
-      rol: RolUsuario.CLIENTE, // ✅ siempre cliente desde registro público
+      rol: RolUsuario.CLIENTE,
     });
 
     return this.usuarioRepository.save(usuario);
   }
 
-  // ✅ REGISTRO DESDE AUTH (ADMIN | STAFF | CLIENTE)
+  // Registro desde AUTH (admin, staff o cliente)
   async crear(data: {
     nombre: string;
     email: string;
-    password: string;
+    password: string; // ✔ YA VIENE HASHEADO
     rol: RolUsuario;
   }): Promise<Usuario> {
     const existe = await this.usuarioRepository.findOne({
@@ -50,23 +49,21 @@ export class UsuariosService {
       throw new BadRequestException('El correo ya está registrado');
     }
 
-    // ✅ HASH SEGURO
-    const passwordHash = await bcrypt.hash(data.password, 10);
-
+    // ❌ YA NO SE HASHÉA AQUÍ
     const usuario = this.usuarioRepository.create({
       nombre: data.nombre,
       email: data.email,
-      password: passwordHash,
-      rol: data.rol, // ✅ ahora sí acepta admin, staff o cliente
+      password: data.password, // ✔ almacenamos el hash directamente
+      rol: data.rol,
     });
 
     return this.usuarioRepository.save(usuario);
   }
 
-  // ✅ LOGIN
   async buscarPorEmail(email: string): Promise<Usuario | null> {
     return this.usuarioRepository.findOne({
       where: { email },
     });
   }
 }
+

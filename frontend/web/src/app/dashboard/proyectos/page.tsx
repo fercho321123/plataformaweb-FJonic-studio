@@ -31,7 +31,7 @@ export default function ProyectosPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // ✅ CREAR
+  // CREAR
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [estado, setEstado] =
@@ -40,33 +40,67 @@ export default function ProyectosPage() {
   const [fechaFin, setFechaFin] = useState('');
   const [clienteId, setClienteId] = useState('');
 
-  // ✅ EDITAR
+  // EDITAR
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [editNombre, setEditNombre] = useState('');
   const [editDescripcion, setEditDescripcion] = useState('');
   const [editClienteId, setEditClienteId] = useState('');
 
+  // ==========================
+  //  CARGAR PROYECTOS
+  // ==========================
   const cargarProyectos = async () => {
-    const data = await apiFetch('/proyectos');
-    setProyectos(data);
-    setLoading(false);
+    try {
+      let data;
+
+      if (usuario?.rol === 'cliente') {
+        // Cliente solo ve sus propios proyectos
+        data = await apiFetch('/proyectos/mios');
+      } else {
+        // Admin y staff ven todos
+        data = await apiFetch('/proyectos');
+      }
+
+      setProyectos(data);
+    } catch (err) {
+      console.error(err);
+      setError('No se pudieron cargar los proyectos');
+    } finally {
+      setLoading(false);
+    }
   };
 
+  // ==========================
+  //  CARGAR CLIENTES (solo admin/staff)
+  // ==========================
   const cargarClientes = async () => {
-    const data = await apiFetch('/clientes');
-    setClientes(data);
+    if (usuario?.rol === 'cliente') return;
+
+    try {
+      const data = await apiFetch('/clientes');
+      setClientes(data);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
+  // ==========================
+  // USE EFFECT
+  // ==========================
   useEffect(() => {
+    if (!usuario) return;
+
     cargarProyectos();
     cargarClientes();
-  }, []);
+  }, [usuario]);
 
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Gestión de Proyectos</h1>
 
-      {/* ✅ FORMULARIO CREAR */}
+      {/* ==========================
+          FORMULARIO CREAR
+      ========================== */}
       {usuario?.rol !== 'cliente' && (
         <form
           onSubmit={async (e) => {
@@ -128,7 +162,9 @@ export default function ProyectosPage() {
             className="w-full border p-2 mb-3"
             value={estado}
             onChange={(e) =>
-              setEstado(e.target.value as 'pendiente' | 'iniciado' | 'finalizado')
+              setEstado(
+                e.target.value as 'pendiente' | 'iniciado' | 'finalizado'
+              )
             }
           >
             <option value="pendiente">Pendiente</option>
@@ -170,7 +206,9 @@ export default function ProyectosPage() {
         </form>
       )}
 
-      {/* ✅ FORMULARIO EDITAR */}
+      {/* ==========================
+          FORMULARIO EDITAR
+      ========================== */}
       {editandoId && (
         <form
           onSubmit={async (e) => {
@@ -235,7 +273,9 @@ export default function ProyectosPage() {
         </form>
       )}
 
-      {/* ✅ LISTADO */}
+      {/* ==========================
+          LISTADO
+      ========================== */}
       <div className="bg-white p-6 rounded">
         <table className="w-full border text-sm">
           <thead>

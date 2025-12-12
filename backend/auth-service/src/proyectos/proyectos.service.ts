@@ -14,7 +14,6 @@ export class ProyectosService {
     private readonly clienteRepo: Repository<Cliente>,
   ) {}
 
-  // ✅ CREAR PROYECTO
   async crear(data: any): Promise<Proyecto> {
     const cliente = await this.clienteRepo.findOne({
       where: { id: data.clienteId },
@@ -24,42 +23,35 @@ export class ProyectosService {
       throw new NotFoundException('Cliente no encontrado');
     }
 
-    const proyecto = new Proyecto();
-
-    proyecto.nombre = data.nombre;
-    proyecto.descripcion = data.descripcion;
-
-    // ✅ ESTADO CONTROLADO
-    proyecto.estado = ['pendiente', 'iniciado', 'finalizado'].includes(data.estado)
-      ? data.estado
-      : 'pendiente';
-
-    // ✅ FECHA INICIO
-    proyecto.fechaInicio =
-      data.fechaInicio && data.fechaInicio !== ''
-        ? new Date(data.fechaInicio)
-        : new Date();
-
-    // ✅ FECHA FIN (COMO TÚ LO PEDISTE)
-    proyecto.fechaFin = data.fechaFin as any;
-
-    proyecto.cliente = cliente;
+    const proyecto = this.proyectoRepo.create({
+      nombre: data.nombre,
+      descripcion: data.descripcion,
+      estado: ['pendiente', 'iniciado', 'finalizado'].includes(data.estado)
+        ? data.estado
+        : 'pendiente',
+      fechaInicio: data.fechaInicio ? new Date(data.fechaInicio) : new Date(),
+      fechaFin: data.fechaFin || null,
+      cliente,
+    });
 
     return await this.proyectoRepo.save(proyecto);
   }
 
-  // ✅ LISTAR PROYECTOS
-  async findAll(): Promise<Proyecto[]> {
-    return await this.proyectoRepo.find({
+  async findAll() {
+    return this.proyectoRepo.find({
       relations: ['cliente'],
     });
   }
 
-  // ✅ ELIMINAR PROYECTO (ID = NUMBER)
-  async eliminar(id: number) {
-    const proyecto = await this.proyectoRepo.findOne({
-      where: { id },
+  async findByClienteEmail(email: string) {
+    return this.proyectoRepo.find({
+      where: { cliente: { email: email } },
+      relations: ['cliente'],
     });
+  }
+
+  async eliminar(id: number) {
+    const proyecto = await this.proyectoRepo.findOne({ where: { id } });
 
     if (!proyecto) {
       throw new NotFoundException('Proyecto no encontrado');
@@ -68,7 +60,6 @@ export class ProyectosService {
     return await this.proyectoRepo.remove(proyecto);
   }
 
-  // ✅ ACTUALIZAR PROYECTO (ID = NUMBER)
   async actualizar(id: number, data: any): Promise<Proyecto> {
     const proyecto = await this.proyectoRepo.findOne({
       where: { id },
@@ -79,21 +70,15 @@ export class ProyectosService {
       throw new NotFoundException('Proyecto no encontrado');
     }
 
-    if (data.nombre !== undefined) proyecto.nombre = data.nombre;
-    if (data.descripcion !== undefined) proyecto.descripcion = data.descripcion;
+    if (data.nombre) proyecto.nombre = data.nombre;
+    if (data.descripcion) proyecto.descripcion = data.descripcion;
 
-    // ✅ ESTADO CONTROLADO
     if (['pendiente', 'iniciado', 'finalizado'].includes(data.estado)) {
       proyecto.estado = data.estado;
     }
 
-    // ✅ FECHA INICIO
-    if (data.fechaInicio && data.fechaInicio !== '') {
-      proyecto.fechaInicio = new Date(data.fechaInicio);
-    }
-
-    // ✅ FECHA FIN (FORZADA COMO PEDISTE)
-    proyecto.fechaFin = data.fechaFin as any;
+    if (data.fechaInicio) proyecto.fechaInicio = new Date(data.fechaInicio);
+    proyecto.fechaFin = data.fechaFin || null;
 
     return await this.proyectoRepo.save(proyecto);
   }
