@@ -6,7 +6,17 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
-
+  @Post('register-cliente')
+registerCliente(
+  @Body()
+  body: {
+    nombre: string;
+    email: string;
+    password: string;
+  },
+) {
+  return this.authService.registerCliente(body);
+}
   // LOGIN
   @Post('login')
   login(@Body() body: { email: string; password: string }) {
@@ -33,5 +43,6 @@ export class AuthController {
   me(@Req() req: any) {
     return req.user;
   }
+  // REGISTER SOLO PARA CLIENTES (público)
 }
 

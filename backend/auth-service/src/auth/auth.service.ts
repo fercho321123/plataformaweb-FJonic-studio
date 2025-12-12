@@ -14,6 +14,35 @@ export class AuthService {
     private readonly usuariosService: UsuariosService,
     private readonly jwtService: JwtService,
   ) {}
+async registerCliente(body: {
+  nombre: string;
+  email: string;
+  password: string;
+}) {
+  const { nombre, email, password } = body;
+
+  const existe = await this.usuariosService.buscarPorEmail(email);
+  if (existe) throw new BadRequestException('El correo ya está registrado');
+
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  const usuario = await this.usuariosService.crear({
+    nombre,
+    email,
+    password: passwordHash,
+    rol: RolUsuario.CLIENTE,
+  });
+
+  return {
+    mensaje: 'Cuenta creada exitosamente',
+    usuario: {
+      id: usuario.id,
+      nombre: usuario.nombre,
+      email: usuario.email,
+      rol: usuario.rol,
+    },
+  };
+}
 
   async login(email: string, password: string) {
     console.log('EMAIL RECIBIDO:', email);
@@ -84,6 +113,7 @@ export class AuthService {
       },
     };
   }
+  
 }
 
 
