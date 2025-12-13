@@ -19,38 +19,41 @@ import { Roles } from '../auth/decorators/roles.decorator';
 export class ProyectosController {
   constructor(private readonly proyectosService: ProyectosService) {}
 
-  // 👉 Crear proyecto (solo admin y staff)
+  // 👉 Crear proyecto (admin y staff)
   @Post()
   @Roles('admin', 'staff')
   crear(@Body() body: any) {
     return this.proyectosService.crear(body);
   }
 
-  // 👉 CLIENTE obtiene solo sus proyectos
-  @Get('mios')
-  @Roles('cliente', 'admin', 'staff')
-  getMisProyectos(@Req() req) {
-    return this.proyectosService.findByClienteEmail(req.user.email);
-  }
+  // 👉 CLIENTE: ver SOLO sus proyectos
+@Get('mis-proyectos')
+@Roles('cliente')
+misProyectos(@Req() req: any) {
+  return this.proyectosService.buscarPorEmail(req.user.email);
+}
 
-  // 👉 Admin y staff: ver todo
+
+  // 👉 Admin y staff: ver todos
   @Get()
   @Roles('admin', 'staff')
   findAll() {
     return this.proyectosService.findAll();
   }
 
-  // 👉 Eliminar proyecto
+  // 👉 Eliminar proyecto (admin)
   @Delete(':id')
   @Roles('admin')
   eliminar(@Param('id') id: string) {
     return this.proyectosService.eliminar(Number(id));
   }
 
-  // 👉 Actualizar proyecto
+  // 👉 Actualizar proyecto (admin / staff)
   @Patch(':id')
   @Roles('admin', 'staff')
   actualizar(@Param('id') id: string, @Body() body: any) {
     return this.proyectosService.actualizar(Number(id), body);
   }
 }
+
+

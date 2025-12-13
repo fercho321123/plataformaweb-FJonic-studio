@@ -55,7 +55,7 @@ export default function ProyectosPage() {
 
       if (usuario?.rol === 'cliente') {
         // Cliente solo ve sus propios proyectos
-        data = await apiFetch('/proyectos/mios');
+        data = await apiFetch('/proyectos/mis-proyectos');
       } else {
         // Admin y staff ven todos
         data = await apiFetch('/proyectos');

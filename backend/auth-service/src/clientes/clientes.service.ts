@@ -11,19 +11,19 @@ export class ClientesService {
     private readonly clienteRepo: Repository<Cliente>,
   ) {}
 
-  create(data: CreateClienteDto) {
+  // ✅ CREAR CLIENTE (SIN usuarioId)
+  async create(data: CreateClienteDto) {
     const cliente = this.clienteRepo.create(data);
     return this.clienteRepo.save(cliente);
   }
 
-  findAll() {
+  async findAll() {
     return this.clienteRepo.find({
-  order: { createdAt: 'DESC' },
-
+      order: { creadoEn: 'DESC' }, // ⚠️ usa el nombre REAL de la columna
     });
   }
 
-  remove(id: string) {
+  async remove(id: string) {
     return this.clienteRepo.delete(id);
   }
 }

@@ -2,11 +2,13 @@ import {
   Entity,
   Column,
   PrimaryGeneratedColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
   OneToMany,
+  OneToOne,
+  JoinColumn,
+  CreateDateColumn,
 } from 'typeorm';
 import { Proyecto } from '../../proyectos/entities/proyecto.entity';
+import { Usuario } from '../../usuarios/entities/usuario.entity';
 
 @Entity('clientes')
 export class Cliente {
@@ -25,16 +27,15 @@ export class Cliente {
   @Column()
   empresa: string;
 
-  // ✅ FECHAS PROFESIONALES
+  // ✅ RELACIÓN REAL CON USUARIO
+  @OneToOne(() => Usuario, { eager: true })
+  @JoinColumn()
+  usuario: Usuario;
+
+  // ✅ PROYECTOS DEL CLIENTE
+  @OneToMany(() => Proyecto, (proyecto) => proyecto.cliente)
+  proyectos: Proyecto[];
+
   @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
-
-@OneToMany(() => Proyecto, (proyecto) => proyecto.cliente, {
-  cascade: ['remove'],
-})
-proyectos: Proyecto[];
+  creadoEn: Date;
 }
-

@@ -1,25 +1,31 @@
 'use client';
 
 import { useAuth } from '@/context/AuthContext';
+import DashboardCliente from './components/DashboardCliente';
 
 export default function DashboardPage() {
-  const { usuario } = useAuth();
+  const { usuario, loading } = useAuth();
 
+  if (loading) {
+    return <p>Cargando...</p>;
+  }
+
+  if (!usuario) {
+    return null;
+  }
+
+  // 👤 DASHBOARD CLIENTE
+  if (usuario.rol === 'cliente') {
+    return <DashboardCliente />;
+  }
+
+  // 🛠️ DASHBOARD ADMIN / STAFF (temporal)
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">Panel Principal</h1>
-
-      <div className="bg-white p-6 rounded-xl shadow-md max-w-xl">
-        <p className="mb-2">
-          <strong>Usuario:</strong> {usuario?.nombre}
-        </p>
-        <p className="mb-2">
-          <strong>Email:</strong> {usuario?.email}
-        </p>
-        <p>
-          <strong>Rol:</strong> {usuario?.rol}
-        </p>
-      </div>
+      <h1 className="text-3xl font-bold">Panel administrativo</h1>
+      <p className="mt-4 text-gray-700">
+        Selecciona una opción del menú lateral.
+      </p>
     </div>
   );
 }

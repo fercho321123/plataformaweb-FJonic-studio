@@ -14,6 +14,7 @@ export class ProyectosService {
     private readonly clienteRepo: Repository<Cliente>,
   ) {}
 
+  // 👉 Crear proyecto (admin / staff)
   async crear(data: any): Promise<Proyecto> {
     const cliente = await this.clienteRepo.findOne({
       where: { id: data.clienteId },
@@ -34,32 +35,49 @@ export class ProyectosService {
       cliente,
     });
 
-    return await this.proyectoRepo.save(proyecto);
+    return this.proyectoRepo.save(proyecto);
   }
 
+  // 👉 Admin / Staff: todos los proyectos
   async findAll() {
     return this.proyectoRepo.find({
       relations: ['cliente'],
     });
   }
 
-  async findByClienteEmail(email: string) {
-    return this.proyectoRepo.find({
-      where: { cliente: { email: email } },
-      relations: ['cliente'],
-    });
-  }
+// ✅ Buscar proyectos por email del cliente
+async buscarPorEmail(email: string) {
+  return this.proyectoRepo.find({
+    where: {
+      cliente: {
+        email: email,
+      },
+    },
+    relations: ['cliente'],
+    order: {
+      fechaInicio: 'DESC',
+    },
+  });
+}
 
+
+
+
+
+  // 👉 Eliminar proyecto (admin)
   async eliminar(id: number) {
-    const proyecto = await this.proyectoRepo.findOne({ where: { id } });
+    const proyecto = await this.proyectoRepo.findOne({
+      where: { id },
+    });
 
     if (!proyecto) {
       throw new NotFoundException('Proyecto no encontrado');
     }
 
-    return await this.proyectoRepo.remove(proyecto);
+    return this.proyectoRepo.remove(proyecto);
   }
 
+  // 👉 Actualizar proyecto (admin / staff)
   async actualizar(id: number, data: any): Promise<Proyecto> {
     const proyecto = await this.proyectoRepo.findOne({
       where: { id },
@@ -77,12 +95,12 @@ export class ProyectosService {
       proyecto.estado = data.estado;
     }
 
-    if (data.fechaInicio) proyecto.fechaInicio = new Date(data.fechaInicio);
+    if (data.fechaInicio) {
+      proyecto.fechaInicio = new Date(data.fechaInicio);
+    }
+
     proyecto.fechaFin = data.fechaFin || null;
 
-    return await this.proyectoRepo.save(proyecto);
+    return this.proyectoRepo.save(proyecto);
   }
 }
-
-
-

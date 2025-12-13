@@ -12,7 +12,7 @@ interface Cliente {
 }
 
 export default function ClientesPage() {
-  const { token, usuario } = useAuth(); // ✅ AHORA USAMOS EL USUARIO
+  const { token, usuario } = useAuth();
 
   const esAdminOStaff =
     usuario?.rol === 'admin' || usuario?.rol === 'staff';
@@ -25,6 +25,7 @@ export default function ClientesPage() {
   const [email, setEmail] = useState('');
   const [telefono, setTelefono] = useState('');
   const [empresa, setEmpresa] = useState('');
+
 
   const cargarClientes = async () => {
     try {
@@ -57,7 +58,7 @@ export default function ClientesPage() {
     }
   }, [token]);
 
-  // ✅ SOLO ADMIN Y STAFF PUEDEN CREAR
+  // ✅ CREAR CLIENTE
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!esAdminOStaff) return;
@@ -75,14 +76,16 @@ export default function ClientesPage() {
           nombre,
           email,
           telefono,
-          empresa,
+          empresa,// ✅ CLAVE
         }),
       });
 
       if (!res.ok) {
-        throw new Error('Error al crear cliente');
+        const msg = await res.text();
+        throw new Error(msg || 'Error al crear cliente');
       }
 
+      // limpiar formulario
       setNombre('');
       setEmail('');
       setTelefono('');
@@ -95,7 +98,6 @@ export default function ClientesPage() {
     }
   };
 
-  // ✅ SOLO ADMIN Y STAFF PUEDEN ELIMINAR
   const eliminarCliente = async (id: string) => {
     if (!esAdminOStaff) return;
 
@@ -125,7 +127,6 @@ export default function ClientesPage() {
     <div>
       <h1 className="text-2xl font-bold mb-6">Gestión de Clientes</h1>
 
-      {/* ✅ FORMULARIO SOLO PARA ADMIN Y STAFF */}
       {esAdminOStaff && (
         <form
           onSubmit={handleSubmit}
@@ -181,7 +182,6 @@ export default function ClientesPage() {
         </form>
       )}
 
-      {/* ✅ LISTADO (CLIENTE SOLO VE) */}
       <div className="bg-white p-6 rounded-xl shadow-md">
         <h2 className="text-lg font-semibold mb-4">Listado de clientes</h2>
 
@@ -197,7 +197,6 @@ export default function ClientesPage() {
                 <th className="border p-2">Email</th>
                 <th className="border p-2">Teléfono</th>
                 <th className="border p-2">Empresa</th>
-
                 {esAdminOStaff && (
                   <th className="border p-2">Acciones</th>
                 )}
