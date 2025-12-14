@@ -3,6 +3,7 @@
 import { useAuth } from '@/context/AuthContext';
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
+import Link from 'next/link';
 
 interface Cliente {
   id: string;
@@ -46,18 +47,13 @@ export default function ProyectosPage() {
   const [editDescripcion, setEditDescripcion] = useState('');
   const [editClienteId, setEditClienteId] = useState('');
 
-  // ==========================
-  //  CARGAR PROYECTOS
-  // ==========================
   const cargarProyectos = async () => {
     try {
       let data;
 
       if (usuario?.rol === 'cliente') {
-        // Cliente solo ve sus propios proyectos
         data = await apiFetch('/proyectos/mis-proyectos');
       } else {
-        // Admin y staff ven todos
         data = await apiFetch('/proyectos');
       }
 
@@ -70,9 +66,6 @@ export default function ProyectosPage() {
     }
   };
 
-  // ==========================
-  //  CARGAR CLIENTES (solo admin/staff)
-  // ==========================
   const cargarClientes = async () => {
     if (usuario?.rol === 'cliente') return;
 
@@ -84,12 +77,8 @@ export default function ProyectosPage() {
     }
   };
 
-  // ==========================
-  // USE EFFECT
-  // ==========================
   useEffect(() => {
     if (!usuario) return;
-
     cargarProyectos();
     cargarClientes();
   }, [usuario]);
@@ -207,73 +196,6 @@ export default function ProyectosPage() {
       )}
 
       {/* ==========================
-          FORMULARIO EDITAR
-      ========================== */}
-      {editandoId && (
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault();
-
-            await apiFetch(`/proyectos/${editandoId}`, {
-              method: 'PATCH',
-              body: JSON.stringify({
-                nombre: editNombre,
-                descripcion: editDescripcion,
-                clienteId: editClienteId,
-              }),
-            });
-
-            setEditandoId(null);
-            cargarProyectos();
-          }}
-          className="bg-yellow-50 p-6 rounded mb-10 max-w-xl border"
-        >
-          <h2 className="font-semibold mb-4">Editar Proyecto</h2>
-
-          <input
-            className="w-full border p-2 mb-3"
-            value={editNombre}
-            onChange={(e) => setEditNombre(e.target.value)}
-            required
-          />
-
-          <textarea
-            className="w-full border p-2 mb-3"
-            value={editDescripcion}
-            onChange={(e) => setEditDescripcion(e.target.value)}
-            required
-          />
-
-          <select
-            className="w-full border p-2 mb-4"
-            value={editClienteId}
-            onChange={(e) => setEditClienteId(e.target.value)}
-            required
-          >
-            {clientes.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nombre}
-              </option>
-            ))}
-          </select>
-
-          <div className="flex gap-3">
-            <button className="bg-green-700 text-white px-4 py-2 rounded">
-              Guardar
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setEditandoId(null)}
-              className="bg-gray-600 text-white px-4 py-2 rounded"
-            >
-              Cancelar
-            </button>
-          </div>
-        </form>
-      )}
-
-      {/* ==========================
           LISTADO
       ========================== */}
       <div className="bg-white p-6 rounded">
@@ -295,55 +217,20 @@ export default function ProyectosPage() {
               <tr key={proyecto.id}>
                 <td>{proyecto.nombre}</td>
                 <td>{proyecto.descripcion}</td>
-
-                <td>
-                  {usuario?.rol === 'cliente' ? (
-                    proyecto.estado
-                  ) : (
-                    <select
-                      value={proyecto.estado}
-                      onChange={async (e) => {
-                        await apiFetch(`/proyectos/${proyecto.id}`, {
-                          method: 'PATCH',
-                          body: JSON.stringify({
-                            estado: e.target.value,
-                          }),
-                        });
-                        cargarProyectos();
-                      }}
-                    >
-                      <option value="pendiente">Pendiente</option>
-                      <option value="iniciado">Iniciado</option>
-                      <option value="finalizado">Finalizado</option>
-                    </select>
-                  )}
-                </td>
-
+                <td>{proyecto.estado}</td>
                 <td>{proyecto.fechaInicio?.slice(0, 10)}</td>
-
-                <td>
-                  {usuario?.rol === 'cliente' ? (
-                    proyecto.fechaFin?.slice(0, 10) || '—'
-                  ) : (
-                    <input
-                      type="date"
-                      defaultValue={proyecto.fechaFin?.slice(0, 10) || ''}
-                      onBlur={async (e) => {
-                        await apiFetch(`/proyectos/${proyecto.id}`, {
-                          method: 'PATCH',
-                          body: JSON.stringify({
-                            fechaFin: e.target.value || null,
-                          }),
-                        });
-                        cargarProyectos();
-                      }}
-                    />
-                  )}
-                </td>
-
+                <td>{proyecto.fechaFin?.slice(0, 10) || '—'}</td>
                 <td>{proyecto.cliente?.nombre}</td>
 
-                <td className="space-x-2">
+                <td className="space-y-2">
+                  {/* 🔹 LINK A ACTUALIZACIONES */}
+                  <Link
+                    href={`/dashboard/proyectos/${proyecto.id}/actualizaciones`}
+                    className="block text-blue-600 underline"
+                  >
+                    Ver actualizaciones
+                  </Link>
+
                   {usuario?.rol !== 'cliente' && (
                     <button
                       onClick={() => {
