@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 
 interface Cliente {
@@ -13,7 +13,6 @@ interface Cliente {
 
 export default function ClientesPage() {
   const { token, usuario } = useAuth();
-
   const esAdminOStaff =
     usuario?.rol === 'admin' || usuario?.rol === 'staff';
 
@@ -21,31 +20,27 @@ export default function ClientesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // 🔍 búsqueda y filtros
+  const [busqueda, setBusqueda] = useState('');
+  const [empresaFiltro, setEmpresaFiltro] = useState('todas');
+
+  // formulario
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [telefono, setTelefono] = useState('');
   const [empresa, setEmpresa] = useState('');
 
-
   const cargarClientes = async () => {
     try {
-      setError('');
       setLoading(true);
-
       const res = await fetch('http://localhost:3001/clientes', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!res.ok) {
-        throw new Error(`Error HTTP: ${res.status}`);
-      }
-
+      if (!res.ok) throw new Error();
       const data = await res.json();
       setClientes(data);
-    } catch (err) {
-      console.error(err);
+    } catch {
       setError('Error al cargar clientes');
     } finally {
       setLoading(false);
@@ -53,17 +48,12 @@ export default function ClientesPage() {
   };
 
   useEffect(() => {
-    if (token) {
-      cargarClientes();
-    }
+    if (token) cargarClientes();
   }, [token]);
 
-  // ✅ CREAR CLIENTE
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!esAdminOStaff) return;
-
-    setError('');
 
     try {
       const res = await fetch('http://localhost:3001/clientes', {
@@ -72,160 +62,176 @@ export default function ClientesPage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          nombre,
-          email,
-          telefono,
-          empresa,// ✅ CLAVE
-        }),
+        body: JSON.stringify({ nombre, email, telefono, empresa }),
       });
 
-      if (!res.ok) {
-        const msg = await res.text();
-        throw new Error(msg || 'Error al crear cliente');
-      }
+      if (!res.ok) throw new Error();
 
-      // limpiar formulario
       setNombre('');
       setEmail('');
       setTelefono('');
       setEmpresa('');
-
-      await cargarClientes();
-    } catch (err: any) {
-      console.error('ERROR REAL AL CREAR CLIENTE:', err);
-      setError(err?.message || 'Error al crear cliente');
+      cargarClientes();
+    } catch {
+      setError('Error al crear cliente');
     }
   };
 
   const eliminarCliente = async (id: string) => {
-    if (!esAdminOStaff) return;
+    if (!confirm('¿Eliminar cliente?')) return;
 
-    const confirmar = confirm('¿Seguro que deseas eliminar este cliente?');
-    if (!confirmar) return;
+    await fetch(`http://localhost:3001/clientes/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-    try {
-      const res = await fetch(`http://localhost:3001/clientes/${id}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) {
-        throw new Error('Error al eliminar cliente');
-      }
-
-      await cargarClientes();
-    } catch (err) {
-      console.error(err);
-      alert('Error al eliminar cliente');
-    }
+    cargarClientes();
   };
 
+  // 🧠 CLIENTES FILTRADOS
+  const clientesFiltrados = useMemo(() => {
+    return clientes.filter((c) => {
+      const texto = busqueda.toLowerCase();
+
+      const coincideBusqueda =
+        c.nombre.toLowerCase().includes(texto) ||
+        c.email.toLowerCase().includes(texto) ||
+        c.empresa.toLowerCase().includes(texto);
+
+      const coincideEmpresa =
+        empresaFiltro === 'todas' ||
+        c.empresa === empresaFiltro;
+
+      return coincideBusqueda && coincideEmpresa;
+    });
+  }, [clientes, busqueda, empresaFiltro]);
+
+  const empresasUnicas = Array.from(
+    new Set(clientes.map((c) => c.empresa))
+  );
+
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Gestión de Clientes</h1>
+    <div className="space-y-10 text-gray-900">
+      {/* HEADER */}
+      <div>
+        <h1 className="text-3xl font-bold text-[#0D3A66]">
+          Gestión de clientes
+        </h1>
+        <p className="text-gray-700">
+          Busca, filtra y administra tus clientes
+        </p>
+      </div>
 
-      {esAdminOStaff && (
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white p-6 rounded-xl shadow-md mb-10 max-w-xl"
+      {/* 🔍 BUSCADOR + FILTROS */}
+      <div className="flex flex-col md:flex-row gap-4">
+        <input
+          placeholder="Buscar por nombre, empresa o email..."
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          className="flex-1 border border-gray-300 rounded-lg p-3
+                     text-gray-900 placeholder-gray-500
+                     focus:outline-none focus:ring-2 focus:ring-blue-600"
+        />
+
+        <select
+          value={empresaFiltro}
+          onChange={(e) => setEmpresaFiltro(e.target.value)}
+          className="border border-gray-300 rounded-lg p-3 text-gray-900
+                     focus:outline-none focus:ring-2 focus:ring-blue-600"
         >
-          <h2 className="text-lg font-semibold mb-4">Crear nuevo cliente</h2>
+          <option value="todas">Todas las empresas</option>
+          {empresasUnicas.map((emp) => (
+            <option key={emp} value={emp}>
+              {emp}
+            </option>
+          ))}
+        </select>
+      </div>
 
-          {error && (
-            <p className="bg-red-100 text-red-700 p-2 rounded mb-4 text-sm">
-              {error}
-            </p>
-          )}
+      {/* FORMULARIO */}
+      {esAdminOStaff && (
+        <div className="bg-white rounded-2xl shadow-lg p-6 max-w-3xl">
+          <h2 className="font-semibold mb-4">
+            Registrar nuevo cliente
+          </h2>
 
-          <input
-            className="w-full border p-2 rounded mb-3"
-            placeholder="Nombre"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            required
-          />
-
-          <input
-            className="w-full border p-2 rounded mb-3"
-            placeholder="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-
-          <input
-            className="w-full border p-2 rounded mb-3"
-            placeholder="Teléfono"
-            value={telefono}
-            onChange={(e) => setTelefono(e.target.value)}
-            required
-          />
-
-          <input
-            className="w-full border p-2 rounded mb-4"
-            placeholder="Empresa"
-            value={empresa}
-            onChange={(e) => setEmpresa(e.target.value)}
-            required
-          />
-
-          <button
-            type="submit"
-            className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
+          <form
+            onSubmit={handleSubmit}
+            className="grid grid-cols-1 md:grid-cols-2 gap-4"
           >
-            Crear cliente
-          </button>
-        </form>
+            <input
+              placeholder="Nombre"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              className="input"
+              required
+            />
+            <input
+              placeholder="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="input"
+              required
+            />
+            <input
+              placeholder="Teléfono"
+              value={telefono}
+              onChange={(e) => setTelefono(e.target.value)}
+              className="input"
+              required
+            />
+            <input
+              placeholder="Empresa"
+              value={empresa}
+              onChange={(e) => setEmpresa(e.target.value)}
+              className="input"
+              required
+            />
+
+            <button
+              type="submit"
+              className="md:col-span-2 bg-[#0D3A66] text-white py-3 rounded-lg font-semibold hover:bg-[#175A8C]"
+            >
+              Crear cliente
+            </button>
+          </form>
+        </div>
       )}
 
-      <div className="bg-white p-6 rounded-xl shadow-md">
-        <h2 className="text-lg font-semibold mb-4">Listado de clientes</h2>
+      {/* LISTADO */}
+      {loading ? (
+        <p>Cargando clientes...</p>
+      ) : clientesFiltrados.length === 0 ? (
+        <p className="text-gray-700">
+          No se encontraron clientes con esos filtros
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {clientesFiltrados.map((c) => (
+            <div
+              key={c.id}
+              className="bg-white rounded-2xl shadow-md p-6 flex flex-col justify-between"
+            >
+              <div>
+                <h3 className="font-semibold">{c.nombre}</h3>
+                <p className="text-sm text-gray-700">{c.empresa}</p>
+                <p className="text-sm">📧 {c.email}</p>
+                <p className="text-sm">📞 {c.telefono}</p>
+              </div>
 
-        {loading ? (
-          <p>Cargando clientes...</p>
-        ) : clientes.length === 0 ? (
-          <p>No hay clientes registrados</p>
-        ) : (
-          <table className="w-full border">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="border p-2">Nombre</th>
-                <th className="border p-2">Email</th>
-                <th className="border p-2">Teléfono</th>
-                <th className="border p-2">Empresa</th>
-                {esAdminOStaff && (
-                  <th className="border p-2">Acciones</th>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {clientes.map((cliente) => (
-                <tr key={cliente.id}>
-                  <td className="border p-2">{cliente.nombre}</td>
-                  <td className="border p-2">{cliente.email}</td>
-                  <td className="border p-2">{cliente.telefono}</td>
-                  <td className="border p-2">{cliente.empresa}</td>
-
-                  {esAdminOStaff && (
-                    <td className="border p-2 text-center">
-                      <button
-                        onClick={() => eliminarCliente(cliente.id)}
-                        className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-                      >
-                        Eliminar
-                      </button>
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+              {esAdminOStaff && (
+                <button
+                  onClick={() => eliminarCliente(c.id)}
+                  className="text-sm text-red-600 hover:underline mt-4 self-end"
+                >
+                  Eliminar
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

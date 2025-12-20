@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ComentarioProyecto } from './entities/comentario.entity';
 
+import { ComentarioProyecto } from './entities/comentario.entity';
 import { ActualizacionProyecto } from '../actualizaciones/entities/actualizacion.entity';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 
@@ -25,27 +25,26 @@ export class ComentariosService {
     contenido: string,
     usuarioId: string,
   ) {
-    const actualizacion = await this.actualizacionRepo.findOne({
-      where: { id: actualizacionId },
+    const actualizacion = await this.actualizacionRepo.findOneBy({
+      id: actualizacionId,
     });
 
     if (!actualizacion) {
       throw new NotFoundException('Actualización no encontrada');
     }
 
-    const usuario = await this.usuarioRepo.findOne({
-      where: { id: usuarioId },
+    const usuario = await this.usuarioRepo.findOneBy({
+      id: usuarioId,
     });
 
     if (!usuario) {
       throw new NotFoundException('Usuario no encontrado');
     }
 
-    const comentario = this.comentarioRepo.create({
-      contenido,
-      actualizacion,
-      usuario,
-    });
+    const comentario = new ComentarioProyecto();
+    comentario.contenido = contenido;
+    comentario.actualizacion = actualizacion;
+    comentario.usuario = usuario;
 
     return this.comentarioRepo.save(comentario);
   }
@@ -63,5 +62,3 @@ export class ComentariosService {
     });
   }
 }
-
-
