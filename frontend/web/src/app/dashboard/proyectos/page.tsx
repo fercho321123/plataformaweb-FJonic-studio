@@ -5,10 +5,12 @@ import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 import Link from 'next/link';
 
+/* ======================
+   TIPOS
+====================== */
 interface Cliente {
   id: string;
   nombre: string;
-  email: string;
 }
 
 interface Proyecto {
@@ -16,6 +18,7 @@ interface Proyecto {
   nombre: string;
   descripcion: string;
   estado: 'pendiente' | 'iniciado' | 'finalizado';
+  progreso?: number;
   fechaInicio?: string;
   fechaFin?: string;
   cliente: {
@@ -24,6 +27,32 @@ interface Proyecto {
   };
 }
 
+/* ======================
+   ESTILOS DE ESTADO
+====================== */
+const estadoColor = {
+  pendiente: 'bg-yellow-100 text-yellow-800',
+  iniciado: 'bg-blue-100 text-blue-800',
+  finalizado: 'bg-green-100 text-green-800',
+};
+
+/* ======================
+   PROGRESS BAR
+====================== */
+function ProgressBar({ value }: { value: number }) {
+  return (
+    <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+      <div
+        className="h-2 bg-blue-600 transition-all duration-500"
+        style={{ width: `${value}%` }}
+      />
+    </div>
+  );
+}
+
+/* ======================
+   PAGE
+====================== */
 export default function ProyectosPage() {
   const { usuario } = useAuth();
 
@@ -32,7 +61,7 @@ export default function ProyectosPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // CREAR
+  // FORM CREAR
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [estado, setEstado] =
@@ -41,25 +70,18 @@ export default function ProyectosPage() {
   const [fechaFin, setFechaFin] = useState('');
   const [clienteId, setClienteId] = useState('');
 
-  // EDITAR
-  const [editandoId, setEditandoId] = useState<string | null>(null);
-  const [editNombre, setEditNombre] = useState('');
-  const [editDescripcion, setEditDescripcion] = useState('');
-  const [editClienteId, setEditClienteId] = useState('');
-
+  /* ======================
+     DATA
+  ====================== */
   const cargarProyectos = async () => {
     try {
-      let data;
-
-      if (usuario?.rol === 'cliente') {
-        data = await apiFetch('/proyectos/mis-proyectos');
-      } else {
-        data = await apiFetch('/proyectos');
-      }
+      const data =
+        usuario?.rol === 'cliente'
+          ? await apiFetch('/proyectos/mis-proyectos')
+          : await apiFetch('/proyectos');
 
       setProyectos(data);
-    } catch (err) {
-      console.error(err);
+    } catch {
       setError('No se pudieron cargar los proyectos');
     } finally {
       setLoading(false);
@@ -68,13 +90,8 @@ export default function ProyectosPage() {
 
   const cargarClientes = async () => {
     if (usuario?.rol === 'cliente') return;
-
-    try {
-      const data = await apiFetch('/clientes');
-      setClientes(data);
-    } catch (err) {
-      console.error(err);
-    }
+    const data = await apiFetch('/clientes');
+    setClientes(data);
   };
 
   useEffect(() => {
@@ -83,13 +100,18 @@ export default function ProyectosPage() {
     cargarClientes();
   }, [usuario]);
 
+  /* ======================
+     RENDER
+  ====================== */
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Gestión de Proyectos</h1>
+    <div className="space-y-10">
+      <h1 className="text-3xl font-bold text-[#0D3A66]">
+        Gestión de Proyectos
+      </h1>
 
-      {/* ==========================
-          FORMULARIO CREAR
-      ========================== */}
+      {/* ======================
+          CREAR PROYECTO
+      ====================== */}
       {usuario?.rol !== 'cliente' && (
         <form
           onSubmit={async (e) => {
@@ -121,152 +143,172 @@ export default function ProyectosPage() {
               setError('Error al crear proyecto');
             }
           }}
-          className="bg-white p-6 rounded mb-10 max-w-xl"
+          className="bg-white p-6 rounded-2xl shadow max-w-2xl"
         >
-          <h2 className="font-semibold mb-4">Crear Proyecto</h2>
+          <h2 className="text-lg font-semibold text-[#0D3A66] mb-4">
+            Crear nuevo proyecto
+          </h2>
 
           {error && (
-            <p className="bg-red-100 text-red-700 p-2 rounded mb-3 text-sm">
+            <p className="bg-red-100 text-red-700 p-2 rounded mb-3">
               {error}
             </p>
           )}
 
-          <input
-            className="w-full border p-2 mb-3"
-            placeholder="Nombre"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            required
-          />
+          <div className="space-y-3">
+            <input
+              className="w-full border rounded px-3 py-2 text-gray-800"
+              placeholder="Nombre del proyecto"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              required
+            />
 
-          <textarea
-            className="w-full border p-2 mb-3"
-            placeholder="Descripción"
-            value={descripcion}
-            onChange={(e) => setDescripcion(e.target.value)}
-            required
-          />
+            <textarea
+              className="w-full border rounded px-3 py-2 text-gray-800"
+              placeholder="Descripción del proyecto"
+              value={descripcion}
+              onChange={(e) => setDescripcion(e.target.value)}
+              required
+            />
 
-          <select
-            className="w-full border p-2 mb-3"
-            value={estado}
-            onChange={(e) =>
-              setEstado(
-                e.target.value as 'pendiente' | 'iniciado' | 'finalizado'
-              )
-            }
-          >
-            <option value="pendiente">Pendiente</option>
-            <option value="iniciado">Iniciado</option>
-            <option value="finalizado">Finalizado</option>
-          </select>
+            <select
+              className="w-full border rounded px-3 py-2 text-gray-800"
+              value={estado}
+              onChange={(e) =>
+                setEstado(e.target.value as any)
+              }
+            >
+              <option value="pendiente">Pendiente</option>
+              <option value="iniciado">Iniciado</option>
+              <option value="finalizado">Finalizado</option>
+            </select>
 
-          <input
-            type="date"
-            className="w-full border p-2 mb-3"
-            value={fechaInicio}
-            onChange={(e) => setFechaInicio(e.target.value)}
-          />
+            <input
+              type="date"
+              className="w-full border rounded px-3 py-2 text-gray-800"
+              value={fechaInicio}
+              onChange={(e) => setFechaInicio(e.target.value)}
+            />
 
-          <input
-            type="date"
-            className="w-full border p-2 mb-3"
-            value={fechaFin}
-            onChange={(e) => setFechaFin(e.target.value)}
-          />
+            <input
+              type="date"
+              className="w-full border rounded px-3 py-2 text-gray-800"
+              value={fechaFin}
+              onChange={(e) => setFechaFin(e.target.value)}
+            />
 
-          <select
-            className="w-full border p-2 mb-4"
-            value={clienteId}
-            onChange={(e) => setClienteId(e.target.value)}
-            required
-          >
-            <option value="">Seleccionar cliente</option>
-            {clientes.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nombre}
-              </option>
-            ))}
-          </select>
+            <select
+              className="w-full border rounded px-3 py-2 text-gray-800"
+              value={clienteId}
+              onChange={(e) => setClienteId(e.target.value)}
+              required
+            >
+              <option value="">Seleccionar cliente</option>
+              {clientes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nombre}
+                </option>
+              ))}
+            </select>
 
-          <button className="bg-black text-white px-4 py-2 rounded">
-            Crear proyecto
-          </button>
+            <button className="bg-[#0D3A66] text-white px-5 py-2 rounded hover:bg-[#175A8C] transition">
+              Crear proyecto
+            </button>
+          </div>
         </form>
       )}
 
-      {/* ==========================
-          LISTADO
-      ========================== */}
-      <div className="bg-white p-6 rounded">
-        <table className="w-full border text-sm">
-          <thead>
-            <tr>
-              <th>Proyecto</th>
-              <th>Descripción</th>
-              <th>Estado</th>
-              <th>Inicio</th>
-              <th>Fin</th>
-              <th>Cliente</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
+      {/* ======================
+          LISTADO PROYECTOS
+      ====================== */}
+      <div className="grid md:grid-cols-2 gap-6">
+        {proyectos.map((p) => (
+          <div
+            key={p.id}
+            className="bg-white p-6 rounded-2xl shadow space-y-4"
+          >
+            <div className="flex justify-between items-start">
+              <h3 className="text-lg font-semibold text-[#0D3A66]">
+                {p.nombre}
+              </h3>
+              <span
+                className={`text-xs px-3 py-1 rounded-full ${estadoColor[p.estado]}`}
+              >
+                {p.estado}
+              </span>
+            </div>
 
-          <tbody>
-            {proyectos.map((proyecto) => (
-              <tr key={proyecto.id}>
-                <td>{proyecto.nombre}</td>
-                <td>{proyecto.descripcion}</td>
-                <td>{proyecto.estado}</td>
-                <td>{proyecto.fechaInicio?.slice(0, 10)}</td>
-                <td>{proyecto.fechaFin?.slice(0, 10) || '—'}</td>
-                <td>{proyecto.cliente?.nombre}</td>
+            {/* PROGRESO */}
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs text-gray-700">
+                <span>Progreso</span>
+                <span>{p.progreso ?? 0}%</span>
+              </div>
+              <ProgressBar value={p.progreso ?? 0} />
+            </div>
 
-                <td className="space-y-2">
-                  {/* 🔹 LINK A ACTUALIZACIONES */}
-                  <Link
-                    href={`/dashboard/proyectos/${proyecto.id}/actualizaciones`}
-                    className="block text-blue-600 underline"
-                  >
-                    Ver actualizaciones
-                  </Link>
+            <p className="text-gray-800">
+              {p.descripcion}
+            </p>
 
-                  {usuario?.rol !== 'cliente' && (
-                    <button
-                      onClick={() => {
-                        setEditandoId(proyecto.id);
-                        setEditNombre(proyecto.nombre);
-                        setEditDescripcion(proyecto.descripcion);
-                        setEditClienteId(proyecto.cliente.id);
-                      }}
-                      className="bg-blue-600 text-white px-3 py-1 rounded"
-                    >
-                      Editar
-                    </button>
-                  )}
+            <p className="text-sm text-gray-700">
+              Cliente: <strong>{p.cliente?.nombre}</strong>
+            </p>
 
-                  {usuario?.rol === 'admin' && (
-                    <button
-                      onClick={async () => {
-                        if (!confirm('¿Eliminar proyecto?')) return;
-                        await apiFetch(`/proyectos/${proyecto.id}`, {
-                          method: 'DELETE',
-                        });
-                        cargarProyectos();
-                      }}
-                      className="bg-red-600 text-white px-3 py-1 rounded"
-                    >
-                      Eliminar
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+            {/* ACCIONES */}
+            <div className="flex flex-col gap-2 text-sm">
+              <Link
+                href={`/dashboard/proyectos/${p.id}/actualizaciones`}
+                className="text-blue-600 hover:underline"
+              >
+                Ver timeline del proyecto
+              </Link>
 
-        {loading && <p className="mt-4">Cargando proyectos...</p>}
+              {/* SLIDER PROGRESO */}
+              {usuario?.rol !== 'cliente' && (
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={p.progreso ?? 0}
+                  onChange={async (e) => {
+                    await apiFetch(`/proyectos/${p.id}/progreso`, {
+                      method: 'PATCH',
+                      body: JSON.stringify({
+                        progreso: Number(e.target.value),
+                      }),
+                    });
+                    cargarProyectos();
+                  }}
+                />
+              )}
+
+              {/* ELIMINAR */}
+              {usuario?.rol === 'admin' && (
+                <button
+                  onClick={async () => {
+                    if (!confirm('¿Eliminar proyecto?')) return;
+                    await apiFetch(`/proyectos/${p.id}`, {
+                      method: 'DELETE',
+                    });
+                    cargarProyectos();
+                  }}
+                  className="text-red-600 hover:underline text-left"
+                >
+                  Eliminar proyecto
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
+
+      {loading && (
+        <p className="text-gray-700">
+          Cargando proyectos...
+        </p>
+      )}
     </div>
   );
 }

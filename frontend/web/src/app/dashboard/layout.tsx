@@ -91,7 +91,7 @@ export default function DashboardLayout({
                 logout();
                 router.push('/login');
               }}
-              className="mt-6 w-full text-left bg-red-600 px-3 py-2 rounded hover:bg-red-700"
+              className="mt-6 w-full text-left bg-blue-500 px-3 py-2 rounded hover:bg-blue-700"
             >
               Cerrar sesión
             </button>

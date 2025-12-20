@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import CrearComentario  from './CrearComentario';
+import CrearComentario from './CrearComentario';
+import ProjectTimeline from '@/app/dashboard/components/ProjectTimeline'; // 🔹 Nueva importación
 
 interface Actualizacion {
   id: string;
@@ -72,9 +73,8 @@ export default function ActualizacionesProyectoPage() {
     setSuccess('');
 
     try {
-     const res = await fetch(
-  `http://localhost:3001/actualizaciones/proyecto/${proyectoId}`,
-
+      const res = await fetch(
+        `http://localhost:3001/actualizaciones/proyecto/${proyectoId}`,
         {
           method: 'POST',
           headers: {
@@ -104,7 +104,6 @@ export default function ActualizacionesProyectoPage() {
 
   return (
     <div className="space-y-8">
-
       <h1 className="text-2xl font-bold">
         Actualizaciones del proyecto
       </h1>
@@ -156,39 +155,22 @@ export default function ActualizacionesProyectoPage() {
         </div>
       )}
 
-      {/* 📋 HISTORIAL */}
-      <div className="bg-white p-6 rounded-xl shadow">
-        <h2 className="text-lg font-semibold mb-4">
-          Historial de actualizaciones
+      {/* 📋 TIMELINE ROADMAP - REEMPLAZADO */}
+      <div className="bg-white p-6 rounded-2xl shadow space-y-6">
+        <h2 className="text-xl font-semibold text-[#0D3A66]">
+          Timeline del proyecto
         </h2>
 
         {loading ? (
-          <p>Cargando actualizaciones...</p>
+          <p className="text-gray-700">
+            Cargando timeline...
+          </p>
         ) : actualizaciones.length === 0 ? (
-          <p className="text-gray-500">
-            Aún no hay actualizaciones para este proyecto.
+          <p className="text-gray-600">
+            Aún no hay avances registrados.
           </p>
         ) : (
-          <ul className="space-y-6">
-            {actualizaciones.map((a) => (
-              <li key={a.id} className="border rounded p-4 space-y-4">
-                <div>
-                  <h3 className="font-semibold">{a.titulo}</h3>
-                  <p className="text-gray-700 mt-2">{a.descripcion}</p>
-                  <p className="text-xs text-gray-500 mt-2">
-                    {new Date(a.creadoEn).toLocaleString()}
-                  </p>
-                </div>
-
-                {/* 💬 COMENTARIOS */}
-               <CrearComentario
-  actualizacionId={a.id}
-  onSuccess={cargarActualizaciones}
-/>
-
-              </li>
-            ))}
-          </ul>
+          <ProjectTimeline items={actualizaciones} />
         )}
       </div>
     </div>
