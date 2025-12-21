@@ -7,7 +7,7 @@ import { ClientesModule } from './clientes/clientes.module';
 import { ProyectosModule } from './proyectos/proyectos.module';
 import { ActualizacionesModule } from './actualizaciones/actualizaciones.module';
 import { ComentariosModule } from './comentarios/comentarios.module';
-
+import { NotificacionesModule } from './notificaciones/notificaciones.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -34,7 +34,8 @@ import { ComentariosModule } from './comentarios/comentarios.module';
 
     ActualizacionesModule,
     
-    ComentariosModule
+    ComentariosModule,
+    NotificacionesModule,
   ],
 })
 export class AppModule {}

@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+// Definición de roles para la plataforma FJONIC
 export enum RolUsuario {
   ADMIN = 'admin',
   STAFF = 'staff',
@@ -26,7 +27,7 @@ export class Usuario {
   @Column()
   password: string;
 
-  // ✅ ROL CORRECTO Y FUNCIONAL PARA PERMISOS
+  // ✅ Gestión de roles para permisos de acceso
   @Column({
     type: 'enum',
     enum: RolUsuario,
@@ -37,10 +38,9 @@ export class Usuario {
   @Column({ default: true })
   activo: boolean;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'creado_en' })
   creadoEn: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'actualizado_en' })
   actualizadoEn: Date;
 }
-

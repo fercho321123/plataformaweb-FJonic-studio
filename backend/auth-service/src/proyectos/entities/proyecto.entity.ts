@@ -1,5 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
 import { Cliente } from '../../clientes/entities/cliente.entity';
+import { OneToMany } from 'typeorm';
+import { Hito } from './hito.entity';
 
 @Entity()
 export class Proyecto {
@@ -8,6 +10,9 @@ export class Proyecto {
 
   @Column()
   nombre: string;
+
+  @OneToMany(() => Hito, (hito) => hito.proyecto)
+hitos: Hito[];
 
   @Column()
   descripcion: string;

@@ -2,58 +2,74 @@ import {
   Controller,
   Get,
   Post,
-  Body,
-  Param,
+  Put,
   Delete,
+  Param,
+  Body,
+  ParseIntPipe,
   Patch,
-  UseGuards,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 import { ProyectosService } from './proyectos.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
+import type { Request } from 'express';
 
 @Controller('proyectos')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class ProyectosController {
   constructor(private readonly proyectosService: ProyectosService) {}
 
-  // 👉 Crear proyecto (admin y staff)
   @Post()
-  @Roles('admin', 'staff')
-  crear(@Body() body: any) {
-    return this.proyectosService.crear(body);
+  crear(@Body() data: any) {
+    return this.proyectosService.crear(data);
   }
 
-  // 👉 CLIENTE: ver SOLO sus proyectos
-@Get('mis-proyectos')
-@Roles('cliente')
-misProyectos(@Req() req: any) {
-  return this.proyectosService.buscarPorEmail(req.user.email);
-}
-
-
-  // 👉 Admin y staff: ver todos
   @Get()
-  @Roles('admin', 'staff')
   findAll() {
     return this.proyectosService.findAll();
   }
 
-  // 👉 Eliminar proyecto (admin)
-  @Delete(':id')
-  @Roles('admin')
-  eliminar(@Param('id') id: string) {
-    return this.proyectosService.eliminar(Number(id));
+  @Get('mis-proyectos')
+  obtenerMisProyectos(@Req() req: Request) {
+    const user = req.user as any;
+    return this.proyectosService.buscarPorEmail(user.email);
   }
 
-  // 👉 Actualizar proyecto (admin / staff)
+  @Get('buscar/:email')
+  buscarPorEmail(@Param('email') email: string) {
+    return this.proyectosService.buscarPorEmail(email);
+  }
+
+  @Patch('hitos/:id/completar')
+  completarHito(@Param('id') id: string) {
+    return this.proyectosService.completarHito(id);
+  }
+
+  @Get(':id/progreso')
+  async obtenerProgreso(@Param('id', ParseIntPipe) id: number) {
+    const progreso = await this.proyectosService.calcularProgresoProyecto(id);
+    return { proyectoId: id, progreso };
+  }
+
+  @Get(':id')
+  obtenerProyectoConProgreso(@Param('id', ParseIntPipe) id: number) {
+    return this.proyectosService.obtenerProyectoConProgreso(id);
+  }
+
+  // ✅ Corregido para evitar errores de tipo en el ID
   @Patch(':id')
-  @Roles('admin', 'staff')
-  actualizar(@Param('id') id: string, @Body() body: any) {
-    return this.proyectosService.actualizar(Number(id), body);
+  @Put(':id')
+  actualizar(
+    @Param('id') id: string,
+    @Body() data: any,
+  ) {
+    const numericId = parseInt(id, 10);
+    return this.proyectosService.actualizar(numericId, data);
+  }
+
+  @Delete(':id')
+  eliminar(@Param('id', ParseIntPipe) id: number) {
+    return this.proyectosService.eliminar(id);
   }
 }
-
-

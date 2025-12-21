@@ -3,13 +3,17 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
 /* =========================
-   TIPOS
+    TIPOS (Mejorados)
 ========================= */
+
+// Definimos los roles como tipos literales para evitar errores de dedo
+export type RolUsuario = 'admin' | 'staff' | 'cliente';
 
 export interface Usuario {
   id?: string;
   email?: string;
-  rol?: string;
+  rol?: RolUsuario; // Ahora es tipado estricto
+  nombre?: string;
 }
 
 interface AuthContextType {
@@ -21,13 +25,13 @@ interface AuthContextType {
 }
 
 /* =========================
-   CONTEXTO
+    CONTEXTO
 ========================= */
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 /* =========================
-   PROVIDER
+    PROVIDER
 ========================= */
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -35,29 +39,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Restaurar sesión al cargar
   useEffect(() => {
-    try {
-      const tokenGuardado = localStorage.getItem('token');
-      const usuarioGuardado = localStorage.getItem('usuario');
+    const restaurarSesion = () => {
+      try {
+        const tokenGuardado = localStorage.getItem('token');
+        const usuarioGuardado = localStorage.getItem('usuario');
 
-      if (tokenGuardado) setToken(tokenGuardado);
-      if (usuarioGuardado) setUsuario(JSON.parse(usuarioGuardado));
-    } catch (error) {
-      console.error('Error restaurando sesión:', error);
-      localStorage.removeItem('token');
-      localStorage.removeItem('usuario');
-    } finally {
-      setLoading(false);
-    }
+        if (tokenGuardado && usuarioGuardado) {
+          setToken(tokenGuardado);
+          setUsuario(JSON.parse(usuarioGuardado));
+        }
+      } catch (error) {
+        console.error('Error restaurando sesión:', error);
+        localStorage.clear(); // Limpia todo si hay error de parseo
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    restaurarSesion();
   }, []);
 
-  const login = (token: string, usuario?: Usuario) => {
-    setToken(token);
-    localStorage.setItem('token', token);
+  const login = (nuevoToken: string, nuevoUsuario?: Usuario) => {
+    setToken(nuevoToken);
+    localStorage.setItem('token', nuevoToken);
 
-    if (usuario) {
-      setUsuario(usuario);
-      localStorage.setItem('usuario', JSON.stringify(usuario));
+    if (nuevoUsuario) {
+      setUsuario(nuevoUsuario);
+      localStorage.setItem('usuario', JSON.stringify(nuevoUsuario));
     }
   };
 
@@ -84,15 +94,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 /* =========================
-   HOOK
+    HOOK
 ========================= */
 
 export function useAuth() {
   const context = useContext(AuthContext);
-
   if (!context) {
     throw new Error('useAuth debe usarse dentro de AuthProvider');
   }
-
   return context;
 }

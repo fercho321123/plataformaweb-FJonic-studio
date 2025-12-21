@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Proyecto } from './entities/proyecto.entity';
 import { Cliente } from '../clientes/entities/cliente.entity';
+import { Hito } from './entities/hito.entity';
+import { NotificacionesService } from '../notificaciones/notificaciones.service';
 
 @Injectable()
 export class ProyectosService {
@@ -12,9 +14,16 @@ export class ProyectosService {
 
     @InjectRepository(Cliente)
     private readonly clienteRepo: Repository<Cliente>,
+
+    @InjectRepository(Hito)
+    private readonly hitoRepo: Repository<Hito>,
+
+    private readonly notificacionesService: NotificacionesService,
   ) {}
 
-  // 👉 Crear proyecto (admin / staff)
+  // =====================================================
+  // 👉 Crear proyecto
+  // =====================================================
   async crear(data: any): Promise<Proyecto> {
     const cliente = await this.clienteRepo.findOne({
       where: { id: data.clienteId },
@@ -27,44 +36,40 @@ export class ProyectosService {
     const proyecto = this.proyectoRepo.create({
       nombre: data.nombre,
       descripcion: data.descripcion,
-      estado: ['pendiente', 'iniciado', 'finalizado'].includes(data.estado)
-        ? data.estado
-        : 'pendiente',
+      estado: 'pendiente',
       fechaInicio: data.fechaInicio ? new Date(data.fechaInicio) : new Date(),
       fechaFin: data.fechaFin || null,
       cliente,
     });
 
-    return this.proyectoRepo.save(proyecto);
+    return await this.proyectoRepo.save(proyecto);
   }
 
-  // 👉 Admin / Staff: todos los proyectos
+  // =====================================================
+  // 👉 Listar proyectos
+  // =====================================================
   async findAll() {
-    return this.proyectoRepo.find({
+    return await this.proyectoRepo.find({
       relations: ['cliente'],
     });
   }
 
-// ✅ Buscar proyectos por email del cliente
-async buscarPorEmail(email: string) {
-  return this.proyectoRepo.find({
-    where: {
-      cliente: {
-        email: email,
+  // =====================================================
+  // 👉 Buscar por email
+  // =====================================================
+  async buscarPorEmail(email: string) {
+    return await this.proyectoRepo.find({
+      where: {
+        cliente: { email },
       },
-    },
-    relations: ['cliente'],
-    order: {
-      fechaInicio: 'DESC',
-    },
-  });
-}
+      relations: ['cliente'],
+      order: { fechaInicio: 'DESC' },
+    });
+  }
 
-
-
-
-
-  // 👉 Eliminar proyecto (admin)
+  // =====================================================
+  // 👉 Eliminar proyecto
+  // =====================================================
   async eliminar(id: number) {
     const proyecto = await this.proyectoRepo.findOne({
       where: { id },
@@ -74,10 +79,12 @@ async buscarPorEmail(email: string) {
       throw new NotFoundException('Proyecto no encontrado');
     }
 
-    return this.proyectoRepo.remove(proyecto);
+    return await this.proyectoRepo.remove(proyecto);
   }
 
-  // 👉 Actualizar proyecto (admin / staff)
+  // =====================================================
+  // 👉 Actualizar proyecto
+  // =====================================================
   async actualizar(id: number, data: any): Promise<Proyecto> {
     const proyecto = await this.proyectoRepo.findOne({
       where: { id },
@@ -88,19 +95,108 @@ async buscarPorEmail(email: string) {
       throw new NotFoundException('Proyecto no encontrado');
     }
 
-    if (data.nombre) proyecto.nombre = data.nombre;
-    if (data.descripcion) proyecto.descripcion = data.descripcion;
+    Object.assign(proyecto, data);
+    return await this.proyectoRepo.save(proyecto);
+  }
 
-    if (['pendiente', 'iniciado', 'finalizado'].includes(data.estado)) {
-      proyecto.estado = data.estado;
+  // =====================================================
+  // ⭐ PROGRESO REAL DEL PROYECTO (%)
+  // =====================================================
+  async calcularProgresoProyecto(proyectoId: number): Promise<number> {
+    const hitos = await this.hitoRepo.find({
+      where: {
+        proyecto: { id: proyectoId },
+      },
+    });
+
+    if (hitos.length === 0) return 0;
+
+    const completados = hitos.filter((h) => h.completado).length;
+    return Math.round((completados / hitos.length) * 100);
+  }
+
+  // =====================================================
+  // 👉 Proyecto + progreso
+  // =====================================================
+  async obtenerProyectoConProgreso(id: number) {
+    const proyecto = await this.proyectoRepo.findOne({
+      where: { id },
+      relations: ['cliente', 'hitos'],
+    });
+
+    if (!proyecto) {
+      throw new NotFoundException('Proyecto no encontrado');
     }
 
-    if (data.fechaInicio) {
-      proyecto.fechaInicio = new Date(data.fechaInicio);
+    const progreso = await this.calcularProgresoProyecto(id);
+    return { ...proyecto, progreso };
+  }
+
+  // =====================================================
+  // 🔁 Toggle hito (completar / descompletar)
+  // =====================================================
+  async toggleHito(hitoId: string) {
+    const hito = await this.hitoRepo.findOne({
+      where: { id: hitoId },
+      relations: ['proyecto', 'proyecto.cliente'],
+    });
+
+    if (!hito) {
+      throw new NotFoundException('Hito no encontrado');
     }
 
-    proyecto.fechaFin = data.fechaFin || null;
+    hito.completado = !hito.completado;
+    await this.hitoRepo.save(hito);
 
-    return this.proyectoRepo.save(proyecto);
+    const progreso = await this.calcularProgresoProyecto(hito.proyecto.id);
+
+    // Actualizar estado del proyecto automáticamente
+    hito.proyecto.estado = progreso === 100 ? 'finalizado' : 'iniciado';
+    await this.proyectoRepo.save(hito.proyecto);
+
+    return {
+      mensaje: 'Hito actualizado',
+      progreso,
+    };
+  }
+
+  // =====================================================
+  // ✅ COMPLETAR HITO + NOTIFICAR
+  // =====================================================
+  async completarHito(hitoId: string) {
+    const hito = await this.hitoRepo.findOne({
+      where: { id: hitoId },
+      relations: ['proyecto', 'proyecto.cliente'],
+    });
+
+    if (!hito) {
+      throw new NotFoundException('Hito no encontrado');
+    }
+
+    // 1️⃣ Marcar completado
+    hito.completado = true;
+    await this.hitoRepo.save(hito);
+
+    // 2️⃣ Recalcular progreso
+    const progreso = await this.calcularProgresoProyecto(hito.proyecto.id);
+
+    // 3️⃣ Estado del proyecto
+    hito.proyecto.estado = progreso === 100 ? 'finalizado' : 'iniciado';
+    await this.proyectoRepo.save(hito.proyecto);
+
+    // 4️⃣ 🔔 Notificar cliente (Conversión segura de ID)
+    const clienteIdNumerico = Number(hito.proyecto.cliente.id);
+
+    if (!isNaN(clienteIdNumerico)) {
+      await this.notificacionesService.crear(
+        clienteIdNumerico,
+        `Tu proyecto "${hito.proyecto.nombre}" avanzó al ${progreso}%`,
+      );
+    }
+
+    return {
+      progreso,
+      estado: hito.proyecto.estado,
+    };
   }
 }

@@ -27,12 +27,14 @@ export class Cliente {
   @Column()
   empresa: string;
 
-  // ✅ RELACIÓN REAL CON USUARIO
+  // ✅ NUEVA COLUMNA DE ESTADO
+  @Column({ default: true })
+  activo: boolean;
+
   @OneToOne(() => Usuario, { eager: true })
   @JoinColumn()
   usuario: Usuario;
 
-  // ✅ PROYECTOS DEL CLIENTE
   @OneToMany(() => Proyecto, (proyecto) => proyecto.cliente)
   proyectos: Proyecto[];
 
