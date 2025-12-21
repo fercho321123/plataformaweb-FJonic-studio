@@ -72,19 +72,19 @@ export default function DashboardLayout({
         <div className="flex items-center gap-6">
           <NotificationBell />
           <div className="hidden md:block text-right">
-            <p className="text-sm font-bold text-slate-800 leading-none">{usuario?.email ?? 'Usuario'}</p>
-            <p className="text-[10px] font-black text-[#05ABCA] uppercase mt-1">{usuario?.rol ?? 'Miembro'}</p>
+            <p className="text-sm font-bold text-slate-800 leading-none">{usuario?.nombre || usuario?.email}</p>
+            <p className="text-[10px] font-black text-[#05ABCA] uppercase mt-1 tracking-widest">{usuario?.rol}</p>
           </div>
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#0D3A66] to-[#0A1F33] flex items-center justify-center text-white font-bold shadow-lg shadow-blue-900/10">
-            {usuario?.email?.charAt(0).toUpperCase() ?? 'U'}
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#0D3A66] to-[#0A1F33] flex items-center justify-center text-white font-bold shadow-lg shadow-blue-900/10 uppercase">
+            {usuario?.nombre?.charAt(0) || usuario?.email?.charAt(0)}
           </div>
         </div>
       </header>
 
       <div className="flex flex-1">
-        {/* 🌑 SIDEBAR REDISEÑADO */}
+        {/* 🌑 SIDEBAR */}
         <aside className="w-72 bg-[#0A1F33] text-white flex flex-col shadow-2xl z-40 sticky top-20 h-[calc(100vh-5rem)]">
-          <nav className="flex-1 p-6 space-y-1 overflow-y-auto custom-scrollbar">
+          <nav className="flex-1 p-6 space-y-1 overflow-y-auto custom-scrollbar text-sm font-medium">
             
             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 ml-4">Menú Principal</p>
             
@@ -92,65 +92,84 @@ export default function DashboardLayout({
               Inicio
             </Link>
 
-            <Link href="/dashboard/nosotros" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/nosotros') ? 'bg-white/10 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-              Nosotros
+            {/* 💎 APARTADO DE PLANES (Accesible para todos) */}
+            <Link href="/dashboard/planes" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/planes') ? 'bg-[#05ABCA] text-white font-bold shadow-lg shadow-[#05ABCA]/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+              Nuestros Planes
             </Link>
 
-            <Link href="/dashboard/portafolio" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/portafolio') ? 'bg-white/10 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-              Portafolio
-            </Link>
-
-            {/* 🔒 SECCIÓN EXCLUSIVA: ADMINISTRACIÓN */}
+            {/* 🔒 PANEL EXCLUSIVO ADMIN */}
             {esAdmin && (
               <div className="pt-6 mt-6 border-t border-white/10 space-y-1">
-                <p className="text-[10px] font-black text-[#05ABCA] uppercase tracking-widest mb-4 ml-4">Panel de Control</p>
+                <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-4 ml-4">Administración</p>
                 
-                <Link href="/dashboard/admin/finanzas" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/admin/finanzas') ? 'bg-amber-500/20 text-amber-400 font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                <Link href="/dashboard/admin/usuarios" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/admin/usuarios') ? 'bg-amber-500 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                  Gestión de Staff
+                </Link>
+
+                <Link href="/dashboard/admin/finanzas" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/admin/finanzas') ? 'bg-amber-500/10 text-amber-400 font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
                   Control Financiero
                 </Link>
 
-                <Link href="/dashboard/admin/calendario" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/admin/calendario') ? 'bg-amber-500/20 text-amber-400 font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                  Calendario Global
-                </Link>
-
-                <Link href="/dashboard/admin/editor-web" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/admin/editor-web') ? 'bg-amber-500/20 text-amber-400 font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                  Editor de Contenido
-                </Link>
-
-                <Link href="/dashboard/admin/leads" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/admin/leads') ? 'bg-amber-500/20 text-amber-400 font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                  Analítica de Leads
+                <Link href="/dashboard/admin/editor-web" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/admin/editor-web') ? 'bg-amber-500/10 text-amber-400 font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                  Editor de Web
                 </Link>
               </div>
             )}
 
-            {/* 👥 GESTIÓN HUMANA / PROYECTOS */}
+            {/* 🛠️ PANEL OPERATIVO (ADMIN Y STAFF) */}
             {esAdminOStaff && (
               <div className="pt-6 mt-6 border-t border-white/10 space-y-1">
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 ml-4">Operaciones</p>
-                <Link href="/dashboard/clientes" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/clientes') ? 'bg-white/10 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                  Clientes
-                </Link>
+                <p className="text-[10px] font-black text-[#05ABCA] uppercase tracking-widest mb-4 ml-4">Operaciones</p>
+                
                 <Link href="/dashboard/proyectos" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/proyectos') ? 'bg-white/10 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                  Proyectos
+                  Proyectos Activos
                 </Link>
+
+                <Link href="/dashboard/clientes" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/clientes') ? 'bg-white/10 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                  Directorio Clientes
+                </Link>
+
+                <Link href="/dashboard/calendario" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/calendario') ? 'bg-white/10 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                  Agenda de Entregas
+                </Link>
+
                 <Link href="/dashboard/facturacion" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/facturacion') ? 'bg-white/10 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                  Facturación
+                  Recibos y Facturas
+                </Link>
+              </div>
+            )}
+
+            {/* 👤 SECCIÓN DE CLIENTE */}
+            {!esAdminOStaff && (
+              <div className="pt-6 mt-6 border-t border-white/10 space-y-1">
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 ml-4">Mi Cuenta</p>
+                <Link href="/dashboard/mis-pedidos" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/mis-pedidos') ? 'bg-white/10 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                  Mis Pedidos
+                </Link>
+                <Link href="/dashboard/soporte" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/soporte') ? 'bg-white/10 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                  Soporte Técnico
                 </Link>
               </div>
             )}
 
             <div className="pt-8 mt-8 border-t border-white/5">
-              <button onClick={() => { logout(); router.push('/login'); }} className="w-full flex items-center justify-between px-5 py-4 rounded-2xl bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white transition-all font-bold text-sm">
+              <button 
+                onClick={() => { logout(); router.push('/login'); }} 
+                className="w-full flex items-center justify-between px-5 py-4 rounded-2xl bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white transition-all font-bold text-sm group"
+              >
                 Cerrar sesión
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
               </button>
             </div>
           </nav>
           
           <div className="p-6">
             <div className="bg-[#175A8C]/20 rounded-2xl p-4 border border-white/5 text-center">
-              <p className="text-[10px] font-bold text-blue-300 uppercase tracking-tighter">FJONIC Studio</p>
-              <p className="text-[9px] text-slate-400 mt-1 uppercase tracking-widest">Master Panel v1.2</p>
+              <p className="text-[10px] font-bold text-blue-300 uppercase tracking-tighter italic leading-none">FJONIC Studio</p>
+              <p className="text-[9px] text-slate-400 mt-1 uppercase tracking-widest leading-none">Master Panel v1.2</p>
             </div>
           </div>
         </aside>

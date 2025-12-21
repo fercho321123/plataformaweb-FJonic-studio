@@ -14,60 +14,68 @@ export class AuthService {
     private readonly usuariosService: UsuariosService,
     private readonly jwtService: JwtService,
   ) {}
-async registerCliente(body: {
-  nombre: string;
-  email: string;
-  password: string;
-}) {
-  const { nombre, email, password } = body;
 
-  const existe = await this.usuariosService.buscarPorEmail(email);
-  if (existe) throw new BadRequestException('El correo ya está registrado');
+  /**
+   * REGISTRO PARA CLIENTES (PÚBLICO)
+   * Forza siempre el rol de 'cliente' por seguridad.
+   */
+  async registerCliente(body: {
+    nombre: string;
+    email: string;
+    password: string;
+  }) {
+    const { nombre, email, password } = body;
 
-  const passwordHash = await bcrypt.hash(password, 10);
+    const existe = await this.usuariosService.buscarPorEmail(email);
+    if (existe) throw new BadRequestException('El correo ya está registrado');
 
-  const usuario = await this.usuariosService.crear({
-    nombre,
-    email,
-    password: passwordHash,
-    rol: RolUsuario.CLIENTE,
-  });
+    const passwordHash = await bcrypt.hash(password, 10);
 
-  return {
-    mensaje: 'Cuenta creada exitosamente',
-    usuario: {
-      id: usuario.id,
-      nombre: usuario.nombre,
-      email: usuario.email,
-      rol: usuario.rol,
-    },
-  };
-}
+    const usuario = await this.usuariosService.crear({
+      nombre,
+      email,
+      password: passwordHash,
+      rol: RolUsuario.CLIENTE,
+    });
 
+    return {
+      mensaje: 'Cuenta creada exitosamente',
+      usuario: {
+        id: usuario.id,
+        nombre: usuario.nombre,
+        email: usuario.email,
+        rol: usuario.rol,
+      },
+    };
+  }
+
+  /**
+   * LOGIN GENERAL
+   * Incluye el ROL en el payload del JWT para los Guards.
+   */
   async login(email: string, password: string) {
-    console.log('EMAIL RECIBIDO:', email);
-    console.log('PASSWORD RECIBIDO:', password);
-
     const usuario = await this.usuariosService.buscarPorEmail(email);
-
-    console.log('USUARIO EN BD:', usuario);
 
     if (!usuario) {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    const passwordValido = await bcrypt.compare(password, usuario.password);
+    // Si el usuario tiene una propiedad "activo", es bueno validarla aquí
+    if (usuario.activo === false) {
+      throw new UnauthorizedException('Esta cuenta está desactivada');
+    }
 
-    console.log('PASSWORD VALIDO:', passwordValido);
+    const passwordValido = await bcrypt.compare(password, usuario.password);
 
     if (!passwordValido) {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
+    // EL PAYLOAD: Esta es la parte crítica para que funcionen los @Roles
     const payload = {
       sub: usuario.id,
       email: usuario.email,
-      rol: usuario.rol,
+      rol: usuario.rol, // <--- El RolesGuard leerá esto de aquí
     };
 
     return {
@@ -81,6 +89,10 @@ async registerCliente(body: {
     };
   }
 
+  /**
+   * REGISTRO ADMINISTRATIVO (INTERNO)
+   * Permite crear cualquier tipo de rol.
+   */
   async register(body: {
     nombre: string;
     email: string;
@@ -99,8 +111,8 @@ async registerCliente(body: {
     const usuario = await this.usuariosService.crear({
       nombre,
       email,
-      password: passwordHash, // ✔ viene hasheado
-      rol,
+      password: passwordHash,
+      rol: rol,
     });
 
     return {
@@ -113,7 +125,4 @@ async registerCliente(body: {
       },
     };
   }
-  
 }
-
-

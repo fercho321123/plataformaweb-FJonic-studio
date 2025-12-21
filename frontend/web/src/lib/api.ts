@@ -1,30 +1,50 @@
 export async function apiFetch(endpoint: string, options: RequestInit = {}) {
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  // 1. Obtener el token de forma segura
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(options.headers as Record<string, string>),
-  };
+  // 2. Construir headers de forma limpia
+  const headers = new Headers(options.headers);
+  
+  if (!headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
 
-  // 👉 Agregar token si existe
   if (token) {
-    headers.Authorization = `Bearer ${token}`;
+    headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const url = `${process.env.NEXT_PUBLIC_API_URL}${endpoint}`;
+  // 3. Validar la URL base
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+  const url = `${baseUrl}${endpoint}`;
 
-  const res = await fetch(url, {
-    ...options,
-    headers,
-  });
+  try {
+    const res = await fetch(url, {
+      ...options,
+      headers,
+    });
 
-  if (!res.ok) {
-    const errText = await res.text();
-    console.error("❌ ERROR API:", res.status, errText);
-    throw new Error(`Error HTTP: ${res.status} - ${errText}`);
+    // 4. Manejo de errores robusto
+    if (!res.ok) {
+      // Intentamos leer el error como JSON, si falla, usamos texto plano
+      let errorMessage = `Error HTTP: ${res.status}`;
+      try {
+        const errorData = await res.json();
+        errorMessage = errorData.message || errorMessage;
+      } catch {
+        const errText = await res.text();
+        errorMessage = errText || errorMessage;
+      }
+      
+      console.error("❌ ERROR API:", res.status, errorMessage);
+      throw new Error(errorMessage);
+    }
+
+    // 5. Manejo de respuestas vacías (ej. 204 No Content)
+    if (res.status === 204) return null;
+
+    return await res.json();
+  } catch (error) {
+    console.error("❌ FETCH FAILED:", error);
+    throw error;
   }
-
-  return res.json();
 }
-

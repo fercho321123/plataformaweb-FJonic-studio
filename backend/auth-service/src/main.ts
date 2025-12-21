@@ -14,11 +14,12 @@ async function bootstrap() {
   });
 
   // 2. Activar validaciones globales (para que funcionen tus DTOs)
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true,
-  }));
+// En src/main.ts
+app.useGlobalPipes(new ValidationPipe({
+  whitelist: true, // Elimina lo que no esté en el DTO
+  forbidNonWhitelisted: true, // Lanza error si hay datos extra
+  transform: true, // Transforma tipos automáticamente
+}));
 
   // 3. Puerto del Backend
   await app.listen(3001);

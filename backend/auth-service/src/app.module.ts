@@ -8,6 +8,7 @@ import { ProyectosModule } from './proyectos/proyectos.module';
 import { ActualizacionesModule } from './actualizaciones/actualizaciones.module';
 import { ComentariosModule } from './comentarios/comentarios.module';
 import { NotificacionesModule } from './notificaciones/notificaciones.module';
+import { FacturacionModule } from './facturacion/facturacion.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -36,6 +37,7 @@ import { NotificacionesModule } from './notificaciones/notificaciones.module';
     
     ComentariosModule,
     NotificacionesModule,
+    FacturacionModule,
   ],
 })
 export class AppModule {}
