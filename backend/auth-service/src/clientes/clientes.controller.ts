@@ -7,7 +7,6 @@ import {
   Param,
   UseGuards,
   Patch,
-  ParseIntPipe,
 } from '@nestjs/common';
 import { ClientesService } from './clientes.service';
 import { CreateClienteDto } from './dto/create-cliente.dto';
@@ -32,14 +31,19 @@ export class ClientesController {
     return this.clientesService.create(body);
   }
 
-// src/clientes/clientes.controller.ts
+  @Patch(':id')
+  @Roles('admin', 'staff')
+  async update(
+    @Param('id') id: string, // Eliminado ParseIntPipe porque usas UUID
+    @Body() body: any
+  ) {
+    return this.clientesService.update(id, body);
+  }
 
-@Patch(':id') // 👈 Asegúrate de que tiene los dos puntos :id
-@Roles('admin', 'staff')
-async update(
-  @Param('id') id: string, 
-  @Body() body: any
-) {
-  // Si tus IDs son UUID (como el del error), no uses ParseIntPipe
-  return this.clientesService.update(id, body);
-}}
+  @Delete(':id') // 👈 Agregado el método que faltaba
+  @Roles('admin', 'staff')
+  async eliminar(@Param('id') id: string) {
+    // IMPORTANTE: id es string para que coincida con el UUID de la base de datos
+    return this.clientesService.eliminar(id);
+  }
+}

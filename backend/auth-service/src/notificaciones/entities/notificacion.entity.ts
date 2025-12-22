@@ -1,26 +1,29 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-} from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
 
-@Entity('notificaciones')
+@Entity('notificacion')
 export class Notificacion {
   @PrimaryGeneratedColumn()
   id: number;
 
-  // Si en tu DB la columna se llama usuario_id, añade el name:
-  @Column({ name: 'usuario_id' }) 
-  usuarioId: number;
+  @Column() 
+  usuarioId: string; 
+
+  // Forzamos el nombre de la columna en minúsculas para evitar conflictos con SQL
+  @Column({ name: 'usuario_nombre', nullable: true })
+  usuarioNombre: string;
 
   @Column()
+  titulo: string;
+
+  @Column('text')
   mensaje: string;
+
+  @Column({ default: 'info' })
+  tipo: string;
 
   @Column({ default: false })
   leida: boolean;
 
-  // Si en tu DB la columna se llama created_at, añade el name:
-  @CreateDateColumn({ name: 'created_at' }) 
+  @CreateDateColumn()
   createdAt: Date;
 }

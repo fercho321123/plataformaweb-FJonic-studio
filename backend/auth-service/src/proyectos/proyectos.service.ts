@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, ILike } from 'typeorm';
 import { Proyecto } from './entities/proyecto.entity';
 import { Cliente } from '../clientes/entities/cliente.entity';
 import { Hito } from './entities/hito.entity';
@@ -21,9 +21,7 @@ export class ProyectosService {
     private readonly notificacionesService: NotificacionesService,
   ) {}
 
-  // =====================================================
   // 👉 Crear proyecto
-  // =====================================================
   async crear(data: any): Promise<Proyecto> {
     const cliente = await this.clienteRepo.findOne({
       where: { id: data.clienteId },
@@ -45,31 +43,50 @@ export class ProyectosService {
     return await this.proyectoRepo.save(proyecto);
   }
 
-  // =====================================================
-  // 👉 Listar proyectos
-  // =====================================================
+  // 👉 LISTAR TODOS (ADMIN) - CORREGIDO
+  // Ahora calcula el progreso para cada proyecto antes de enviarlos
   async findAll() {
-    return await this.proyectoRepo.find({
-      relations: ['cliente'],
+    const proyectos = await this.proyectoRepo.find({
+      relations: ['cliente', 'hitos'], // Traemos hitos para poder calcular progreso
+      order: { fechaInicio: 'DESC' }
     });
+
+    // Mapeamos para incluir el progreso en la respuesta del Admin
+    return await Promise.all(
+      proyectos.map(async (proyecto) => {
+        const progreso = await this.calcularProgresoProyecto(proyecto.id);
+        return {
+          ...proyecto,
+          progreso,
+        };
+      }),
+    );
   }
 
-  // =====================================================
-  // 👉 Buscar por email
-  // =====================================================
+  // 👉 BUSCAR POR EMAIL (PANEL CLIENTE)
   async buscarPorEmail(email: string) {
-    return await this.proyectoRepo.find({
+    const proyectos = await this.proyectoRepo.find({
       where: {
-        cliente: { email },
+        cliente: { 
+          email: ILike(email.trim()) 
+        },
       },
-      relations: ['cliente'],
+      relations: ['cliente', 'hitos'],
       order: { fechaInicio: 'DESC' },
     });
+
+    return await Promise.all(
+      proyectos.map(async (proyecto) => {
+        const progreso = await this.calcularProgresoProyecto(proyecto.id);
+        return {
+          ...proyecto,
+          progreso,
+        };
+      }),
+    );
   }
 
-  // =====================================================
   // 👉 Eliminar proyecto
-  // =====================================================
   async eliminar(id: number) {
     const proyecto = await this.proyectoRepo.findOne({
       where: { id },
@@ -82,9 +99,7 @@ export class ProyectosService {
     return await this.proyectoRepo.remove(proyecto);
   }
 
-  // =====================================================
   // 👉 Actualizar proyecto
-  // =====================================================
   async actualizar(id: number, data: any): Promise<Proyecto> {
     const proyecto = await this.proyectoRepo.findOne({
       where: { id },
@@ -99,9 +114,7 @@ export class ProyectosService {
     return await this.proyectoRepo.save(proyecto);
   }
 
-  // =====================================================
-  // ⭐ PROGRESO REAL DEL PROYECTO (%)
-  // =====================================================
+  // ⭐ CÁLCULO DE PROGRESO REAL (%)
   async calcularProgresoProyecto(proyectoId: number): Promise<number> {
     const hitos = await this.hitoRepo.find({
       where: {
@@ -109,15 +122,13 @@ export class ProyectosService {
       },
     });
 
-    if (hitos.length === 0) return 0;
+    if (!hitos || hitos.length === 0) return 0;
 
     const completados = hitos.filter((h) => h.completado).length;
     return Math.round((completados / hitos.length) * 100);
   }
 
-  // =====================================================
-  // 👉 Proyecto + progreso
-  // =====================================================
+  // 👉 Proyecto individual + progreso
   async obtenerProyectoConProgreso(id: number) {
     const proyecto = await this.proyectoRepo.findOne({
       where: { id },
@@ -132,10 +143,8 @@ export class ProyectosService {
     return { ...proyecto, progreso };
   }
 
-  // =====================================================
-  // 🔁 Toggle hito (completar / descompletar)
-  // =====================================================
-  async toggleHito(hitoId: string) {
+  // 🔁 Toggle hito (Corregido el manejo del ID de hito)
+  async toggleHito(hitoId: any) {
     const hito = await this.hitoRepo.findOne({
       where: { id: hitoId },
       relations: ['proyecto', 'proyecto.cliente'],
@@ -149,21 +158,25 @@ export class ProyectosService {
     await this.hitoRepo.save(hito);
 
     const progreso = await this.calcularProgresoProyecto(hito.proyecto.id);
-
-    // Actualizar estado del proyecto automáticamente
-    hito.proyecto.estado = progreso === 100 ? 'finalizado' : 'iniciado';
+    
+    // Actualizamos el estado del proyecto según el progreso
+    if (progreso === 100) hito.proyecto.estado = 'finalizado';
+    else if (progreso > 0) hito.proyecto.estado = 'iniciado';
+    else hito.proyecto.estado = 'pendiente';
+    
     await this.proyectoRepo.save(hito.proyecto);
 
     return {
       mensaje: 'Hito actualizado',
       progreso,
+      completado: hito.completado
     };
   }
 
   // =====================================================
-  // ✅ COMPLETAR HITO + NOTIFICAR
+  // ✅ Completar hito y Notificar
   // =====================================================
-  async completarHito(hitoId: string) {
+  async completarHito(hitoId: any) {
     const hito = await this.hitoRepo.findOne({
       where: { id: hitoId },
       relations: ['proyecto', 'proyecto.cliente'],
@@ -173,25 +186,25 @@ export class ProyectosService {
       throw new NotFoundException('Hito no encontrado');
     }
 
-    // 1️⃣ Marcar completado
     hito.completado = true;
     await this.hitoRepo.save(hito);
 
-    // 2️⃣ Recalcular progreso
     const progreso = await this.calcularProgresoProyecto(hito.proyecto.id);
-
-    // 3️⃣ Estado del proyecto
-    hito.proyecto.estado = progreso === 100 ? 'finalizado' : 'iniciado';
+    
+    if (progreso === 100) hito.proyecto.estado = 'finalizado';
+    else hito.proyecto.estado = 'iniciado';
+    
     await this.proyectoRepo.save(hito.proyecto);
 
-    // 4️⃣ 🔔 Notificar cliente (Conversión segura de ID)
-    const clienteIdNumerico = Number(hito.proyecto.cliente.id);
-
-    if (!isNaN(clienteIdNumerico)) {
-      await this.notificacionesService.crear(
-        clienteIdNumerico,
-        `Tu proyecto "${hito.proyecto.nombre}" avanzó al ${progreso}%`,
-      );
+    // NOTIFICAR AL CLIENTE
+    // Usamos el usuarioId del cliente asociado al proyecto
+    if (hito.proyecto.cliente && hito.proyecto.cliente.id) {
+        await this.notificacionesService.crea(
+            hito.proyecto.cliente.id, // ID del destinatario
+            'Avance de Proyecto 🚀',
+            `Tu proyecto "${hito.proyecto.nombre}" ha avanzado al ${progreso}%. Se completó el hito: ${hito.titulo}`,
+            'notificacion' // Usamos 'notificacion' para que aparezca en la campana
+        );
     }
 
     return {

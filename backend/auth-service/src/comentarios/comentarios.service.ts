@@ -41,24 +41,25 @@ export class ComentariosService {
       throw new NotFoundException('Usuario no encontrado');
     }
 
-    const comentario = new ComentarioProyecto();
-    comentario.contenido = contenido;
-    comentario.actualizacion = actualizacion;
-    comentario.usuario = usuario;
+    const comentario = this.comentarioRepo.create({
+      contenido,
+      actualizacion,
+      usuario,
+    });
 
-    return this.comentarioRepo.save(comentario);
+    return await this.comentarioRepo.save(comentario);
   }
 
-  // 👉 Listar comentarios por actualización
+  // 👉 Listar comentarios por actualización (Vital para el hilo de conversación)
   async obtenerPorActualizacion(actualizacionId: string) {
     return this.comentarioRepo.find({
       where: {
         actualizacion: { id: actualizacionId },
       },
       order: {
-        creadoEn: 'ASC',
+        creadoEn: 'ASC', // Comentarios en orden cronológico
       },
-      relations: ['usuario'],
+      relations: ['usuario'], // Para mostrar foto/nombre del autor
     });
   }
 }

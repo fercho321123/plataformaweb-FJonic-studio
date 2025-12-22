@@ -1,52 +1,65 @@
 'use client';
 
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
+
+// 🟢 Definición de Props para que TypeScript no de error
+interface ComentariosProps {
+  actualizacionId: string;
+}
+
 interface Comentario {
   id: string;
   contenido: string;
   creadoEn: string;
-  usuario?: {
-    nombre?: string;
-    email?: string;
+  usuario: {
+    nombre: string;
+    rol: string;
   };
 }
 
-interface Props {
-  comentarios: Comentario[];
-}
+export default function ComentariosActualizacion({ actualizacionId }: ComentariosProps) {
+  const { token } = useAuth();
+  const [comentarios, setComentarios] = useState<Comentario[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export default function ComentariosActualizacion({
-  comentarios,
-}: Props) {
-  if (!comentarios || comentarios.length === 0) {
-    return (
-      <p className="text-gray-500 text-sm mt-3">
-        No hay comentarios para esta actualización.
-      </p>
-    );
-  }
+  useEffect(() => {
+    const cargarComentarios = async () => {
+      if (!token || !actualizacionId) return;
+      try {
+        const res = await fetch(`http://localhost:3001/comentarios/actualizacion/${actualizacionId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setComentarios(data);
+        }
+      } catch (error) {
+        console.error("Error cargando comentarios:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    cargarComentarios();
+  }, [token, actualizacionId]);
+
+  if (loading) return <p className="text-[9px] uppercase tracking-widest text-slate-400 animate-pulse">Cargando hilo...</p>;
 
   return (
-    <div className="mt-4 space-y-4">
-      <h4 className="font-semibold text-sm text-gray-700">
-        Comentarios
-      </h4>
-
-      {comentarios.map((comentario) => (
-        <div
-          key={comentario.id}
-          className="border rounded p-3 bg-gray-50"
-        >
-          <p className="text-gray-800 text-sm mb-1">
-            {comentario.contenido}
-          </p>
-
-          <p className="text-xs text-gray-500">
-            {comentario.usuario?.nombre ||
-              comentario.usuario?.email ||
-              'Usuario'}
-            {' · '}
-            {new Date(comentario.creadoEn).toLocaleString()}
-          </p>
+    <div className="space-y-4">
+      {comentarios.map((c) => (
+        <div key={c.id} className="flex gap-3 items-start bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${c.usuario.rol === 'admin' ? 'bg-[#0A1F33]' : 'bg-[#05ABCA]'}`}>
+            {c.usuario.nombre.charAt(0)}
+          </div>
+          <div className="flex-1">
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-black text-[#0A1F33] uppercase">{c.usuario.nombre}</span>
+              <span className="text-[8px] text-slate-300">{new Date(c.creadoEn).toLocaleDateString()}</span>
+            </div>
+            <p className="text-xs text-slate-600 mt-1 leading-tight">{c.contenido}</p>
+          </div>
         </div>
       ))}
     </div>

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ActualizacionProyecto } from './entities/actualizacion.entity';
@@ -18,15 +22,15 @@ export class ActualizacionesService {
     private readonly usuarioRepo: Repository<Usuario>,
   ) {}
 
-  // ✅ Crear actualización (admin / staff)
+  // ✅ Crear actualización
   async crear(
     proyectoId: number,
     titulo: string,
-    contenido: string,
+    descripcion: string,
     usuarioId: string,
   ) {
-    if (!proyectoId) {
-      throw new BadRequestException('proyectoId es obligatorio');
+    if (!proyectoId || isNaN(proyectoId)) {
+      throw new BadRequestException('proyectoId inválido');
     }
 
     const proyecto = await this.proyectoRepo.findOne({
@@ -45,26 +49,29 @@ export class ActualizacionesService {
       throw new NotFoundException('Usuario no encontrado');
     }
 
-const actualizacion = this.actualizacionRepo.create({
-  titulo,
-  descripcion: contenido, // 🔥 MAPEO CORRECTO
-  proyecto,
-  creadoPor: usuario,
-});
+    const actualizacion = this.actualizacionRepo.create({
+      titulo,
+      descripcion,
+      proyecto,
+      creadoPor: usuario,
+    });
 
-
-    return this.actualizacionRepo.save(actualizacion);
+    return await this.actualizacionRepo.save(actualizacion);
   }
 
-  // ✅ Obtener actualizaciones por proyecto
+  // ✅ Listar actualizaciones por proyecto (Con hilos de comentarios)
   async listarPorProyecto(proyectoId: number) {
-    return this.actualizacionRepo.find({
+    if (!proyectoId || isNaN(proyectoId)) {
+      throw new BadRequestException('proyectoId inválido');
+    }
+
+    return await this.actualizacionRepo.find({
       where: {
         proyecto: { id: proyectoId },
       },
-      relations: ['creadoPor'],
+      relations: ['creadoPor', 'comentarios', 'comentarios.usuario'], // Trae toda la conversación
       order: {
-        creadoEn: 'DESC',
+        creadoEn: 'DESC', // Lo más reciente primero
       },
     });
   }

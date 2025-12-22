@@ -1,186 +1,234 @@
 'use client';
 
 import React, { useState } from 'react';
+import { motion, Variants } from 'framer-motion';
 
-// --- ICONOS SVG PREMIUM ---
-const IconVision = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>;
-const IconMision = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>;
-const IconValues = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.52-8.52 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>;
-const IconChevron = ({ isOpen }: { isOpen: boolean }) => (
-  <svg className={`w-5 h-5 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+// --- ICONOS MINIMALISTAS CORREGIDOS (USANDO SPAN PARA EVITAR ERRORES DE ANIDAMIENTO) ---
+const IconPlus = () => (
+  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+    <path d="M12 4v16m8-8H4" />
   </svg>
 );
 
-export default function NosotrosPage() {
+const IconDot = () => (
+  <span className="inline-block w-2 h-2 rounded-full bg-[#05ABCA] flex-shrink-0" />
+);
+
+export default function DashboardExclusivo() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  const equipo = [
-    { 
-      name: "Brayan Fernando Jimenez Murcia", 
-      role: "CEO & Director Creativo", 
-      color: "from-blue-600 to-blue-400",
-      image: "/equipo/fernando.png",
-      animation: "slide-in-from-left-20"
-    },
-    { 
-      name: "Yuli Johana Rodriguez Benitez", 
-      role: "Lead Developer", 
-      color: "from-[#05ABCA] to-cyan-400",
-      image: "/equipo/yuli.png",
-      animation: "slide-in-from-right-20"
-    },
-  ];
-
-  const tecnologias = [
-    { name: "React", color: "text-blue-400" },
-    { name: "Next.js", color: "text-slate-900" },
-    { name: "Tailwind", color: "text-cyan-400" },
-    { name: "TypeScript", color: "text-blue-600" },
-    { name: "Node.js", color: "text-green-500" },
-    { name: "Figma", color: "text-purple-500" }
-  ];
-
-  const faqs = [
-    {
-      q: "¿Cuánto tiempo toma desarrollar un proyecto?",
-      a: "Depende de la complejidad. Un sitio web corporativo suele tomar de 2 a 4 semanas, mientras que una plataforma personalizada puede llevar de 2 a 3 meses."
-    },
-    {
-      q: "¿Ofrecen mantenimiento después del lanzamiento?",
-      a: "Sí, en FJONIC Studio ofrecemos planes de soporte continuo para asegurar que tu tecnología siempre esté actualizada y segura."
-    },
-    {
-      q: "¿Trabajan con clientes fuera de Colombia?",
-      a: "¡Totalmente! Gracias a nuestra infraestructura digital, colaboramos con empresas de toda Latinoamérica y Estados Unidos sin barreras."
+  // Configuración de animaciones profesional
+  const fadeInUp: Variants = {
+    initial: { opacity: 0, y: 30 },
+    animate: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.8, ease: "easeOut" } 
     }
-  ];
+  };
+
+  const staggerContainer: Variants = {
+    animate: { 
+      transition: { staggerChildren: 0.15 } 
+    }
+  };
 
   return (
-    <div className="space-y-12 animate-in fade-in duration-1000 pb-20">
+    <motion.div 
+      initial="initial" 
+      animate="animate"
+      variants={staggerContainer}
+      className="space-y-24 pb-32 max-w-[1400px] mx-auto px-4 md:px-8"
+    >
       
-      {/* 🏆 HERO SECTION */}
-      <section className="relative overflow-hidden bg-[#0A1F33] rounded-[3rem] p-8 md:p-16 text-white shadow-2xl shadow-blue-900/20">
-        <div className="relative z-10 max-w-3xl">
-          <span className="text-[#05ABCA] font-black uppercase tracking-[0.3em] text-xs font-montserrat">Agencia Creativa</span>
-          <h1 className="text-4xl md:text-6xl font-black font-montserrat mt-4 mb-6 leading-tight">
-            Impulsando la <br /> 
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#05ABCA] to-blue-400">
-              Transformación Digital
-            </span>
-          </h1>
-          <p className="text-slate-300 text-lg font-open-sans leading-relaxed">
-            En <strong className="text-white">FJONIC Studio</strong>, fusionamos arte y tecnología para crear experiencias digitales que no solo se ven bien, sino que funcionan.
-          </p>
-        </div>
-        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-blue-500/10 to-transparent pointer-events-none"></div>
-        <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-[#05ABCA] rounded-full blur-[120px] opacity-20"></div>
-      </section>
-
-      {/* 🚀 MISIÓN, VISIÓN Y VALORES */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {[
-          { title: "Nuestra Misión", desc: "Democratizar el acceso a tecnología de vanguardia y diseño de clase mundial.", icon: <IconMision />, bg: "bg-blue-50", text: "text-[#0D3A66]" },
-          { title: "Nuestra Visión", desc: "Ser el estudio creativo referente en Latinoamérica por la calidad humana y técnica.", icon: <IconVision />, bg: "bg-cyan-50", text: "text-[#05ABCA]" },
-          { title: "Valores", desc: "Integridad, pasión por los detalles y un compromiso real con nuestros clientes.", icon: <IconValues />, bg: "bg-rose-50", text: "text-rose-500" }
-        ].map((item, idx) => (
-          <div key={idx} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 hover:-translate-y-2 transition-all duration-300">
-            <div className={`w-14 h-14 ${item.bg} ${item.text} rounded-2xl flex items-center justify-center mb-6`}>
-              {item.icon}
-            </div>
-            <h3 className="text-xl font-black font-montserrat text-[#0D3A66] mb-4">{item.title}</h3>
-            <p className="text-slate-500 text-sm leading-relaxed font-open-sans">{item.desc}</p>
+      {/* 🖤 SECCIÓN 1: EL MANIFIESTO */}
+      <section className="relative pt-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-end">
+          <div className="lg:col-span-8">
+            <motion.span variants={fadeInUp} className="text-[#05ABCA] font-black uppercase tracking-[0.6em] text-[10px] mb-6 block">
+              Potencia Creativa
+            </motion.span>
+            <motion.h1 
+              variants={fadeInUp}
+              className="text-5xl md:text-8xl font-black text-[#0A1F33] leading-[0.9] font-montserrat tracking-tighter"
+            >
+              Diseñamos el <br /> 
+              <span className="text-[#05ABCA]">Impacto Digital.</span>
+            </motion.h1>
           </div>
-        ))}
-      </div>
+          <div className="lg:col-span-4 pb-4">
+            <motion.div variants={fadeInUp} className="text-slate-500 text-lg leading-relaxed font-medium border-l-2 border-slate-100 pl-8">
+              En <strong className="text-[#0A1F33]">FJONIC Studio</strong>, desafiamos lo convencional para elevar marcas al nivel de sofisticación que el mercado global exige.
+            </motion.div>
+          </div>
+        </div>
+      </section>
 
-      {/* 👥 EL EQUIPO */}
-      <section className="bg-white rounded-[3rem] p-10 border border-slate-100 shadow-sm overflow-hidden">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-black font-montserrat text-[#0A1F33]">El Cerebro detrás de FJONIC</h2>
-          <p className="text-slate-500 mt-2 font-open-sans">Mentes creativas trabajando para tu negocio.</p>
+      {/* 🚀 SECCIÓN 2: PILARES DE EXCELENCIA */}
+      <section>
+        <motion.div 
+          variants={staggerContainer}
+          className="grid grid-cols-1 md:grid-cols-3 gap-px bg-slate-100 border border-slate-100 rounded-[3rem] overflow-hidden shadow-2xl shadow-slate-200/50"
+        >
+          {[
+            { 
+              num: "01", 
+              title: "Nuestra Misión", 
+              desc: "Transformar la visión de nuestros clientes en ecosistemas digitales que definan el nuevo estándar de su industria.",
+              label: "Estrategia" 
+            },
+            { 
+              num: "02", 
+              title: "Nuestra Visión", 
+              desc: "Ser el epicentro global de la innovación creativa, donde cada proyecto sea una obra maestra técnica.",
+              label: "Innovación"
+            },
+            { 
+              num: "03", 
+              title: "Valores Core", 
+              desc: "Excelencia intransigente, transparencia absoluta y una obsesión por el detalle en cada desarrollo.",
+              label: "Cultura"
+            }
+          ].map((pillar, i) => (
+            <motion.div 
+              key={i}
+              variants={fadeInUp}
+              whileHover={{ backgroundColor: "#F8FAFC" }}
+              className="bg-white p-12 flex flex-col justify-between h-[400px] transition-colors group"
+            >
+              <div>
+                <span className="text-4xl font-black text-slate-100 group-hover:text-[#05ABCA]/20 transition-colors font-montserrat">
+                  {pillar.num}
+                </span>
+                <p className="text-[#05ABCA] text-[10px] font-black uppercase tracking-widest mt-4">{pillar.label}</p>
+                <h3 className="text-2xl font-black text-[#0A1F33] mt-2 font-montserrat">{pillar.title}</h3>
+              </div>
+              <p className="text-slate-500 text-sm leading-relaxed font-medium">
+                {pillar.desc}
+              </p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </section>
+
+      {/* 👥 SECCIÓN 3: LIDERAZGO EJECUTIVO */}
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
+        <div className="lg:col-span-4 sticky top-32">
+          <motion.h2 variants={fadeInUp} className="text-4xl font-black text-[#0A1F33] font-montserrat tracking-tighter">Dirección <br />Estratégica.</motion.h2>
+          <motion.p variants={fadeInUp} className="text-slate-400 mt-6 text-sm font-medium leading-relaxed max-w-xs">
+            Especialistas enfocados en la ejecución técnica y la dirección de proyectos de alto impacto.
+          </motion.p>
         </div>
 
-        <div className="flex flex-wrap justify-center gap-16">
-          {equipo.map((member, i) => (
-            <div key={i} className={`group text-center max-w-[220px] animate-in fade-in ${member.animation} duration-1000`}>
-              <div className={`relative w-40 h-40 mx-auto rounded-full bg-gradient-to-tr ${member.color} p-1.5 mb-6 shadow-xl transform group-hover:scale-110 transition-all duration-500`}>
-                <div className="relative w-full h-full rounded-full overflow-hidden bg-slate-100 border-4 border-white flex items-center justify-center">
-                  <span className="absolute inset-0 flex items-center justify-center text-[#0D3A66] text-4xl font-black -z-0">
-                    {member.name.charAt(0)}
-                  </span>
-                  {member.image && (
-                    <img 
-                      src={member.image} 
-                      alt={member.name} 
-                      className="relative z-10 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      onError={(e) => {
-                        e.currentTarget.style.opacity = '0';
-                      }}
-                    />
-                  )}
+        <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-12">
+          {[
+            { name: "Brayan Fernando Jimenez", role: "CEO / Director Creativo", img: "/equipo/fernando.png", bio: "Estratega de marca con enfoque en disrupción visual y comercial." },
+            { name: "Yuli Johana Rodriguez", role: "CTO / Líder Tecnológica", img: "/equipo/yuli.png", bio: "Arquitecta de software especializada en sistemas escalables." }
+          ].map((m, i) => (
+            <motion.div 
+              key={i}
+              variants={fadeInUp}
+              whileHover={{ y: -10 }}
+              className="group"
+            >
+              <div className="relative aspect-[4/5] bg-slate-50 rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-sm">
+                <img 
+                   src={m.img} 
+                   alt={m.name} 
+                   className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0A1F33] via-transparent to-transparent opacity-60"></div>
+                <div className="absolute bottom-10 left-10 text-white">
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#05ABCA] mb-2">Socio</p>
+                  <h4 className="text-xl font-black font-montserrat">{m.name}</h4>
                 </div>
               </div>
-              <h4 className="font-black font-montserrat text-[#0D3A66] text-lg leading-tight mb-1">{member.name}</h4>
-              <p className="text-[11px] font-bold text-[#05ABCA] uppercase tracking-[0.2em]">{member.role}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 🛠️ TECNOLOGÍAS */}
-      <section className="text-center py-6">
-        <h3 className="text-xs font-black text-[#05ABCA] uppercase tracking-[0.4em] mb-8">Stack Tecnológico</h3>
-        <div className="flex flex-wrap justify-center gap-6 md:gap-12">
-          {tecnologias.map((tech, i) => (
-            <div key={i} className="flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-700">
-              <span className={`text-lg md:text-xl font-black ${tech.color} opacity-80 hover:opacity-100 transition-opacity cursor-default font-montserrat`}>
-                {tech.name}
-              </span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ❓ SECCIÓN FAQ */}
-      <section className="max-w-3xl mx-auto px-4">
-        <div className="text-center mb-10">
-          <h2 className="text-2xl font-black font-montserrat text-[#0A1F33]">Preguntas Frecuentes</h2>
-          <div className="w-12 h-1 bg-[#05ABCA] mx-auto mt-2 rounded-full"></div>
-        </div>
-        <div className="space-y-4">
-          {faqs.map((faq, index) => (
-            <div key={index} className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-              <button 
-                onClick={() => setOpenFaq(openFaq === index ? null : index)}
-                className="w-full flex items-center justify-between p-6 text-left hover:bg-slate-50/50 transition-colors"
-              >
-                <span className="font-bold text-[#0D3A66] pr-4">{faq.q}</span>
-                <IconChevron isOpen={openFaq === index} />
-              </button>
-              <div className={`transition-all duration-300 ease-in-out ${openFaq === index ? 'max-h-60 opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
-                <div className="p-6 pt-0 text-slate-500 text-sm leading-relaxed border-t border-slate-50">
-                  {faq.a}
-                </div>
+              <div className="mt-6 px-4">
+                <p className="text-xs font-black text-[#0A1F33] uppercase tracking-widest">{m.role}</p>
+                <p className="text-slate-400 text-xs mt-2 font-medium">{m.bio}</p>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </section>
 
-      {/* 📍 CONTACTO RÁPIDO */}
-      <section className="bg-gradient-to-r from-[#0D3A66] to-[#0A1F33] rounded-[2.5rem] p-10 text-center text-white relative shadow-2xl overflow-hidden">
-        <div className="relative z-10">
-            <h3 className="text-2xl font-black font-montserrat mb-4">¿Quieres ser parte de nuestra historia?</h3>
-            <p className="text-blue-200 mb-8 max-w-xl mx-auto font-open-sans text-sm">
-              Estamos siempre en busca de nuevos retos y colaboraciones que cambien el juego.
+      {/* 🛠️ SECCIÓN 4: STACK TÉCNICO */}
+      <motion.section 
+        variants={fadeInUp}
+        className="bg-[#0A1F33] rounded-[4rem] p-12 md:p-24 text-white relative overflow-hidden"
+      >
+        <div className="relative z-10 flex flex-col md:flex-row justify-between gap-16">
+          <div className="max-w-md">
+            <h3 className="text-3xl font-black font-montserrat mb-8">Ecosistema Tecnológico.</h3>
+            <p className="text-slate-400 text-sm leading-relaxed mb-12">
+              Arquitecturas modernas diseñadas para escalar sin límites, optimizadas para rendimiento y seguridad.
             </p>
-            <button className="bg-[#05ABCA] hover:bg-white hover:text-[#05ABCA] text-white px-10 py-4 rounded-2xl font-black text-sm transition-all shadow-xl active:scale-95">
-              Escríbenos hoy mismo
-            </button>
+            <div className="flex flex-wrap gap-4">
+               {["Next.js", "TypeScript", "Node.js", "Tailwind"].map((t, i) => (
+                 <span key={i} className="px-4 py-2 bg-white/5 rounded-full text-[10px] font-bold tracking-widest uppercase border border-white/10">{t}</span>
+               ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-x-12 gap-y-12">
+            {[
+              { label: "Rendimiento", val: "100ms" },
+              { label: "Disponibilidad", val: "99.9%" },
+              { label: "Seguridad", val: "Nivel 4" },
+              { label: "Respuesta", val: "Instante" }
+            ].map((stat, i) => (
+              <div key={i} className="border-l border-[#05ABCA] pl-8">
+                <p className="text-3xl font-black font-montserrat text-white">{stat.val}</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mt-2">{stat.label}</p>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-400 via-transparent to-transparent"></div>
+      </motion.section>
+
+      {/* 📍 SECCIÓN 5: CONSULTAS (FAQ) CORREGIDA */}
+      <section className="max-w-4xl mx-auto">
+        <div className="flex items-center gap-6 mb-16">
+           <h2 className="text-2xl font-black text-[#0A1F33] font-montserrat uppercase tracking-tighter">Análisis de Negocio</h2>
+           <div className="h-px flex-1 bg-slate-100"></div>
+        </div>
+        
+        <div className="space-y-8">
+          {[
+            { q: "¿Cómo se diferencia FJONIC Studio de otras agencias?", a: "Fusionamos análisis de datos con diseño emocional para crear activos comerciales que se traducen en resultados medibles." },
+            { q: "¿Cuál es el proceso para un nuevo proyecto?", a: "Iniciamos con auditoría estratégica, seguida de prototipado de alta fidelidad y desarrollo ágil escalable." }
+          ].map((item, i) => (
+            <div 
+              key={i} 
+              className="cursor-pointer group border-b border-slate-50 pb-8"
+              onClick={() => setOpenFaq(openFaq === i ? null : i)}
+            >
+              <div className="flex items-center justify-between">
+                {/* CAMBIADO P POR DIV PARA EVITAR ERROR DE HIDRATACIÓN */}
+                <div className="text-sm font-black text-[#0A1F33] uppercase tracking-widest flex items-center gap-3">
+                  <IconDot /> 
+                  <span>{item.q}</span>
+                </div>
+                <div className={`transition-transform duration-300 ${openFaq === i ? 'rotate-45 text-[#05ABCA]' : ''}`}>
+                  <IconPlus />
+                </div>
+              </div>
+              {openFaq === i && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="overflow-hidden"
+                >
+                  <p className="text-slate-500 text-sm mt-4 leading-relaxed font-medium pl-5">
+                    {item.a}
+                  </p>
+                </motion.div>
+              )}
+            </div>
+          ))}
+        </div>
       </section>
-    </div>
+
+    </motion.div>
   );
 }

@@ -1,291 +1,152 @@
 'use client';
 
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useEffect, useState } from 'react';
-import { apiFetch } from '@/lib/api';
-import Link from 'next/link';
-import ProjectProgress from '@/app/dashboard/components/ProjectProgress';
-
-interface Cliente {
-  id: string;
-  nombre: string;
-  activo: boolean; // ✅ Campo añadido para el filtro
-}
-
-interface Proyecto {
-  id: string;
-  nombre: string;
-  descripcion: string;
-  estado: 'pendiente' | 'iniciado' | 'finalizado';
-  fechaInicio?: string;
-  fechaFin?: string;
-  cliente: {
-    id: string;
-    nombre: string;
-  };
-}
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { apiFetch } from '@/lib/api'; // Asegúrate de tener este helper para no repetir headers
 
 export default function ProyectosPage() {
   const { usuario } = useAuth();
-
-  const esAdminOStaff =
-    usuario?.rol === 'admin' || usuario?.rol === 'staff';
-
-  const [proyectos, setProyectos] = useState<Proyecto[]>([]);
-  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [proyectos, setProyectos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  // CREAR
-  const [nombre, setNombre] = useState('');
-  const [descripcion, setDescripcion] = useState('');
-  const [estado, setEstado] =
-    useState<'pendiente' | 'iniciado' | 'finalizado'>('pendiente');
-  const [fechaInicio, setFechaInicio] = useState('');
-  const [fechaFin, setFechaFin] = useState('');
-  const [clienteId, setClienteId] = useState('');
-
-  const cargarProyectos = async () => {
-    try {
-      const data =
-        usuario?.rol === 'cliente'
-          ? await apiFetch('/proyectos/mis-proyectos')
-          : await apiFetch('/proyectos');
-
-      setProyectos(data);
-    } catch {
-      setError('No se pudieron cargar los proyectos');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const cargarClientes = async () => {
-    if (usuario?.rol === 'cliente') return;
-    try {
-      const data = await apiFetch('/clientes');
-      // Aseguramos que el estado activo se maneje correctamente
-      setClientes(data);
-    } catch (err) {
-      console.error("Error al cargar clientes");
-    }
-  };
+  const router = useRouter();
 
   useEffect(() => {
-    if (!usuario) return;
-    cargarProyectos();
-    cargarClientes();
-  }, [usuario]);
+    const fetchProyectos = async () => {
+      if (!usuario) return;
 
-  // 🔄 ACTUALIZAR ESTADO
-  const actualizarEstado = async (
-    proyectoId: string,
-    nuevoEstado: Proyecto['estado']
-  ) => {
-    try {
-      await apiFetch(`/proyectos/${proyectoId}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ estado: nuevoEstado }),
-      });
-      cargarProyectos();
-    } catch {
-      alert('Error al actualizar el estado');
-    }
-  };
+      try {
+        // 🟢 LÓGICA INTELIGENTE:
+        // Si es admin, pedimos todos a '/proyectos'
+        // Si es cliente, pedimos solo los suyos a '/proyectos/mis-proyectos'
+        const endpoint = usuario.rol === 'admin' ? '/proyectos' : '/proyectos/mis-proyectos';
+        
+        const data = await apiFetch(endpoint);
+        
+        if (data) {
+          setProyectos(Array.isArray(data) ? data : []);
+        }
+      } catch (error) {
+        console.error("Error cargando proyectos:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // 🗑️ ELIMINAR PROYECTO
-  const eliminarProyecto = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar este proyecto? Esta acción no se puede deshacer.')) {
-      return;
-    }
+    fetchProyectos();
+  }, [usuario]); // Se ejecuta cuando el usuario carga
 
-    try {
-      await apiFetch(`/proyectos/${id}`, {
-        method: 'DELETE',
-      });
-      setProyectos(proyectos.filter((p) => p.id !== id));
-    } catch (err) {
-      alert('No se pudo eliminar el proyecto');
-    }
-  };
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="w-12 h-12 border-4 border-slate-200 border-t-[#05ABCA] rounded-full animate-spin"></div>
+        <p className="mt-4 text-slate-400 font-black uppercase tracking-widest text-[10px]">Sincronizando Proyectos...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-10">
-      <h1 className="text-3xl font-bold text-[#0D3A66]">
-        Proyectos
-      </h1>
+    <div className="max-w-7xl mx-auto space-y-10 p-6">
+      {/* Cabecera Dinámica */}
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <h1 className="text-5xl font-black text-[#0A1F33] font-montserrat tracking-tight uppercase">
+            {usuario?.rol === 'admin' ? 'Gestión de' : 'Mis'} <span className="text-[#05ABCA]">Proyectos</span>
+          </h1>
+          <p className="text-slate-400 mt-2 font-medium">
+            {usuario?.rol === 'admin' 
+              ? 'Panel de control administrativo. Supervisa todos los procesos activos.' 
+              : `Bienvenido, ${usuario?.nombre}. Sigue el avance de tus servicios en tiempo real.`}
+          </p>
+        </div>
+        <div className="bg-white px-6 py-3 rounded-2xl border border-slate-100 shadow-sm">
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 block mb-1">
+            {usuario?.rol === 'admin' ? 'Total Global' : 'Mis Proyectos'}
+          </span>
+          <span className="text-2xl font-black text-[#0A1F33]">{proyectos.length}</span>
+        </div>
+      </header>
 
-      {/* =========================
-          FORMULARIO CREAR
-      ========================= */}
-      {esAdminOStaff && (
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault();
-            setError('');
-
-            try {
-              await apiFetch('/proyectos', {
-                method: 'POST',
-                body: JSON.stringify({
-                  nombre,
-                  descripcion,
-                  estado,
-                  fechaInicio,
-                  fechaFin: fechaFin || null,
-                  clienteId,
-                }),
-              });
-
-              setNombre('');
-              setDescripcion('');
-              setEstado('pendiente');
-              setFechaInicio('');
-              setFechaFin('');
-              setClienteId('');
-
-              cargarProyectos();
-            } catch {
-              setError('Error al crear proyecto');
-            }
-          }}
-          className="bg-white p-6 rounded-2xl shadow max-w-2xl"
-        >
-          <h2 className="font-semibold text-[#0D3A66] mb-4">
-            Crear proyecto
-          </h2>
-
-          {error && (
-            <p className="bg-red-100 text-red-700 p-2 rounded mb-3">
-              {error}
-            </p>
-          )}
-
-          <div className="space-y-3">
-            <input
-              className="w-full border rounded px-3 py-2 text-black"
-              placeholder="Nombre"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              required
-            />
-
-            <textarea
-              className="w-full border rounded px-3 py-2 text-black"
-              placeholder="Descripción"
-              value={descripcion}
-              onChange={(e) => setDescripcion(e.target.value)}
-              required
-            />
-
-            <select
-              className="w-full border rounded px-3 py-2 text-black"
-              value={estado}
-              onChange={(e) =>
-                setEstado(e.target.value as any)
-              }
-            >
-              <option value="pendiente">Pendiente</option>
-              <option value="iniciado">Iniciado</option>
-              <option value="finalizado">Finalizado</option>
-            </select>
-
-            <select
-              className="w-full border rounded px-3 py-2 text-black"
-              value={clienteId}
-              onChange={(e) => setClienteId(e.target.value)}
-              required
-            >
-              <option value="">Seleccionar cliente</option>
-              {/* ✅ FILTRO: Solo mostramos clientes que están activos */}
-              {clientes
-                .filter((c) => c.activo !== false) 
-                .map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nombre}
-                  </option>
-                ))}
-            </select>
-
-            <button className="bg-[#0D3A66] text-white px-5 py-2 rounded hover:bg-[#175A8C] transition">
-              Crear proyecto
-            </button>
+      {proyectos.length === 0 ? (
+        <div className="bg-white border-2 border-dashed border-slate-100 rounded-[3rem] p-20 text-center">
+          <div className="bg-slate-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300">
+            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
           </div>
-        </form>
-      )}
+          <h3 className="text-xl font-bold text-slate-400 italic font-montserrat">
+            {usuario?.rol === 'admin' ? 'No hay proyectos en la base de datos.' : 'No tienes proyectos asignados todavía.'}
+          </h3>
+          <p className="text-slate-400 text-sm mt-2">
+            {usuario?.rol === 'admin' ? 'Crea un proyecto para comenzar.' : 'En cuanto comencemos a trabajar, aparecerán aquí.'}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {proyectos.map((proyecto) => (
+            <motion.div 
+              key={proyecto.id}
+              whileHover={{ y: -5 }}
+              className="bg-white border border-slate-100 rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group"
+            >
+              <div className="p-8">
+                <div className="flex justify-between items-start mb-6">
+                  <div className="flex flex-col gap-1">
+                    <span className="px-4 py-1.5 bg-[#05ABCA]/10 text-[#05ABCA] text-[9px] font-black uppercase tracking-widest rounded-full w-fit">
+                      {proyecto.estado}
+                    </span>
+                    {/* 🟢 Si es admin, mostramos a qué cliente pertenece el proyecto */}
+                    {usuario?.rol === 'admin' && (
+                      <span className="text-[10px] font-bold text-slate-400 ml-1">
+                        Cliente: {proyecto.cliente?.nombre || 'Desconocido'}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[9px] font-black text-slate-300 uppercase tracking-tighter">Avance</p>
+                    <p className="text-xl font-black text-[#0A1F33]">{proyecto.progreso || 0}%</p>
+                  </div>
+                </div>
 
-      {/* =========================
-          LISTADO + PROGRESO
-      ========================= */}
-      <div className="grid md:grid-cols-2 gap-6">
-        {proyectos.map((p) => (
-          <div
-            key={p.id}
-            className="bg-white p-6 rounded-2xl shadow space-y-5"
-          >
-            <div className="flex justify-between items-start">
-              <h3 className="text-lg font-semibold text-[#0D3A66]">
-                {p.nombre}
-              </h3>
+                <h3 className="text-2xl font-black text-[#0A1F33] font-montserrat leading-tight group-hover:text-[#05ABCA] transition-colors">
+                  {proyecto.nombre}
+                </h3>
+                
+                <p className="text-slate-400 text-sm mt-4 line-clamp-2 italic">
+                  {proyecto.descripcion || 'Sin descripción disponible.'}
+                </p>
 
-              <div className="flex items-center gap-3">
-                {esAdminOStaff ? (
-                  <>
-                    <select
-                      value={p.estado}
-                      onChange={(e) =>
-                        actualizarEstado(
-                          p.id,
-                          e.target.value as any
-                        )
-                      }
-                      className="border rounded px-2 py-1 text-sm text-black"
-                    >
-                      <option value="pendiente">Pendiente</option>
-                      <option value="iniciado">Iniciado</option>
-                      <option value="finalizado">Finalizado</option>
-                    </select>
+                <div className="mt-8 mb-8 h-2 w-full bg-slate-50 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${proyecto.progreso || 0}%` }}
+                    className="h-full bg-[#05ABCA] rounded-full shadow-[0_0_8px_rgba(5,171,202,0.4)]"
+                  />
+                </div>
 
-                    <button
-                      onClick={() => eliminarProyecto(p.id)}
-                      className="text-red-500 hover:text-red-700 transition"
-                      title="Eliminar proyecto"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
-                    </button>
-                  </>
-                ) : (
-                  <span className="text-sm font-medium text-[#0D3A66] capitalize">
-                    {p.estado}
-                  </span>
-                )}
+                <div className="flex items-center justify-between pt-6 border-t border-slate-50">
+                   <div className="flex -space-x-2">
+                      <div className="w-8 h-8 rounded-full bg-[#0A1F33] flex items-center justify-center text-[10px] text-white font-bold border-2 border-white uppercase">
+                        {proyecto.nombre.charAt(0)}
+                      </div>
+                   </div>
+                   
+                   <button 
+                    onClick={() => router.push(`/dashboard/proyectos/${proyecto.id}/actualizaciones`)}
+                    className="flex items-center gap-2 bg-[#0A1F33] hover:bg-[#05ABCA] text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg active:scale-95"
+                   >
+                     {usuario?.rol === 'admin' ? 'Gestionar' : 'Abrir Bitácora'}
+                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                     </svg>
+                   </button>
+                </div>
               </div>
-            </div>
-
-            <p className="text-gray-800">
-              {p.descripcion}
-            </p>
-
-            <ProjectProgress porcentaje={p.estado === 'finalizado' ? 100 : p.estado === 'iniciado' ? 50 : 0} />
-
-            <div className="text-sm text-gray-700">
-              Cliente:{' '}
-              <strong>{p.cliente?.nombre}</strong>
-            </div>
-
-            <Link
-              href={`/dashboard/proyectos/${p.id}/actualizaciones`}
-              className="text-blue-600 hover:underline text-sm inline-block"
-            >
-              Ver timeline del proyecto →
-            </Link>
-          </div>
-        ))}
-      </div>
-
-      {loading && <p>Cargando proyectos...</p>}
+            </motion.div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

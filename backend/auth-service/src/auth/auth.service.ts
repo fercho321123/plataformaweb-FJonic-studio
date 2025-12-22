@@ -17,7 +17,6 @@ export class AuthService {
 
   /**
    * REGISTRO PARA CLIENTES (PÚBLICO)
-   * Forza siempre el rol de 'cliente' por seguridad.
    */
   async registerCliente(body: {
     nombre: string;
@@ -51,7 +50,7 @@ export class AuthService {
 
   /**
    * LOGIN GENERAL
-   * Incluye el ROL en el payload del JWT para los Guards.
+   * CORRECCIÓN: Se añade 'nombre' al payload para que los tickets de soporte lo identifiquen.
    */
   async login(email: string, password: string) {
     const usuario = await this.usuariosService.buscarPorEmail(email);
@@ -60,7 +59,6 @@ export class AuthService {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    // Si el usuario tiene una propiedad "activo", es bueno validarla aquí
     if (usuario.activo === false) {
       throw new UnauthorizedException('Esta cuenta está desactivada');
     }
@@ -71,11 +69,12 @@ export class AuthService {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    // EL PAYLOAD: Esta es la parte crítica para que funcionen los @Roles
+    // --- EL PAYLOAD: CRÍTICO PARA EL NOMBRE ---
     const payload = {
       sub: usuario.id,
       email: usuario.email,
-      rol: usuario.rol, // <--- El RolesGuard leerá esto de aquí
+      rol: usuario.rol,
+      nombre: usuario.nombre, // 👈 AHORA EL NOMBRE VIAJA EN EL TOKEN
     };
 
     return {
@@ -91,7 +90,6 @@ export class AuthService {
 
   /**
    * REGISTRO ADMINISTRATIVO (INTERNO)
-   * Permite crear cualquier tipo de rol.
    */
   async register(body: {
     nombre: string;

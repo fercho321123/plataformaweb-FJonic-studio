@@ -4,12 +4,12 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 
 interface Cliente {
-  id: string; // Nota: Si en el DB es número, aquí se maneja como string por el fetch
+  id: string;
   nombre: string;
   email: string;
   telefono: string;
   empresa: string;
-  activo?: boolean;
+  activo: boolean;
 }
 
 export default function ClientesPage() {
@@ -26,7 +26,7 @@ export default function ClientesPage() {
   const [telefono, setTelefono] = useState('');
   const [empresa, setEmpresa] = useState('');
 
-  // ✅ ESTADOS PARA EDICIÓN
+  // Estados para edición
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [nombreEdit, setNombreEdit] = useState('');
   const [emailEdit, setEmailEdit] = useState('');
@@ -45,7 +45,7 @@ export default function ClientesPage() {
       });
       if (!res.ok) throw new Error('Error al cargar clientes');
       const data = await res.json();
-      setClientes(data.map((c: Cliente) => ({ ...c, activo: c.activo ?? true })));
+      setClientes(data.map((c: any) => ({ ...c, activo: c.activo ?? true })));
     } catch (err) {
       setError('No se pudo conectar con el servidor');
     } finally {
@@ -57,7 +57,6 @@ export default function ClientesPage() {
     cargarClientes();
   }, [token]);
 
-  // ✅ GUARDAR CAMBIOS DE EDICIÓN
   const guardarEdicion = async (id: string) => {
     try {
       const res = await fetch(`http://localhost:3001/clientes/${id}`, {
@@ -74,55 +73,39 @@ export default function ClientesPage() {
         }),
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al actualizar');
-      }
+      if (!res.ok) throw new Error('Error al actualizar');
 
+      // Actualización local para no recargar todo
+      setClientes(prev => prev.map(c => c.id === id ? { ...c, nombre: nombreEdit, email: emailEdit, telefono: telEdit, empresa: empEdit } : c));
       setEditandoId(null);
-      await cargarClientes(); // Recargar lista para ver cambios
-      alert('Cliente actualizado con éxito');
     } catch (err: any) {
-      console.error("Error en PATCH:", err);
       alert(err.message || 'Error al actualizar cliente');
     }
   };
 
-const alternarEstado = async (id: string, estadoActual: boolean) => {
-  console.log("Intentando cambiar estado de:", id, "Estado actual:", estadoActual);
-  
-  // 1. Actualización Optimista (Cambia en pantalla de inmediato)
-  const clientesPrevios = [...clientes];
-  setClientes(prev => 
-    prev.map(c => c.id === id ? { ...c, activo: !estadoActual } : c)
-  );
+  const alternarEstado = async (id: string, estadoActual: boolean) => {
+    // Actualización optimista
+    setClientes(prev => prev.map(c => c.id === id ? { ...c, activo: !estadoActual } : c));
 
-  try {
-    const res = await fetch(`http://localhost:3001/clientes/${id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({ activo: !estadoActual }),
-    });
+    try {
+      const res = await fetch(`http://localhost:3001/clientes/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ activo: !estadoActual }),
+      });
 
-    if (!res.ok) {
-      throw new Error('Fallo en el servidor');
+      if (!res.ok) throw new Error();
+    } catch (err) {
+      alert('Error en el servidor al cambiar estado');
+      cargarClientes(); // Revertir cargando de nuevo
     }
-    
-    console.log("Estado actualizado en BD con éxito");
-  } catch (err) {
-    console.error("Error al desactivar:", err);
-    alert('No se pudo guardar el cambio en el servidor');
-    // 2. Si falla, revertimos el cambio visual
-    setClientes(clientesPrevios);
-  }
-};
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     try {
       const res = await fetch('http://localhost:3001/clientes', {
         method: 'POST',
@@ -142,17 +125,24 @@ const alternarEstado = async (id: string, estadoActual: boolean) => {
     }
   };
 
+  // ✅ CORREGIDO: Eliminación optimista y manejo de errores 404
   const eliminarCliente = async (id: string) => {
-    if (!confirm('¿Seguro que deseas eliminar este cliente?')) return;
+    if (!confirm('¿Seguro que deseas eliminar este cliente? Se borrarán todos sus proyectos e hitos asociados.')) return;
+    
     try {
       const res = await fetch(`http://localhost:3001/clientes/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error();
-      cargarClientes();
+
+      // Si se borró con éxito (200/204) o si el servidor dice que ya no existe (404)
+      if (res.ok || res.status === 404) {
+        setClientes(prev => prev.filter(c => c.id !== id));
+      } else {
+        throw new Error('Error de integridad');
+      }
     } catch (err) {
-      alert('Error al eliminar el cliente');
+      alert('No se pudo eliminar el cliente. Verifique las dependencias en el servidor.');
     }
   };
 
@@ -169,7 +159,6 @@ const alternarEstado = async (id: string, estadoActual: boolean) => {
     <div className="space-y-10 p-4">
       <h1 className="text-3xl font-bold text-[#0D3A66]">Gestión de Clientes</h1>
 
-      {/* FORMULARIO CREAR */}
       {esAdminOStaff && (
         <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl shadow max-w-xl border">
           <h2 className="text-lg font-semibold text-[#0D3A66] mb-4">Crear nuevo cliente</h2>
@@ -184,7 +173,6 @@ const alternarEstado = async (id: string, estadoActual: boolean) => {
         </form>
       )}
 
-      {/* FILTROS */}
       <div className="flex flex-wrap gap-4 items-center">
         <input placeholder="Buscar por nombre o empresa..." className="border p-2 rounded flex-1 min-w-[200px] text-black" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
         <select className="border p-2 rounded text-black bg-white" value={estadoFiltro} onChange={(e) => setEstadoFiltro(e.target.value as any)}>
@@ -194,10 +182,11 @@ const alternarEstado = async (id: string, estadoActual: boolean) => {
         </select>
       </div>
 
-      {/* LISTADO */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {loading ? (
-          <p>Cargando datos...</p>
+          <p className="text-gray-500">Cargando datos...</p>
+        ) : clientesFiltrados.length === 0 ? (
+          <p className="text-gray-400">No se encontraron clientes.</p>
         ) : clientesFiltrados.map((c) => (
           <div key={c.id} className="bg-white p-5 rounded-2xl shadow border hover:shadow-md transition-shadow">
             {editandoId === c.id ? (
@@ -221,9 +210,9 @@ const alternarEstado = async (id: string, estadoActual: boolean) => {
                   </span>
                 </div>
                 <div className="text-sm space-y-1 text-gray-700">
-                  <p><span className="font-medium">Empresa:</span> {c.empresa}</p>
-                  <p><span className="font-medium">Email:</span> {c.email}</p>
-                  <p><span className="font-medium">Tel:</span> {c.telefono}</p>
+                  <p><span className="font-medium text-gray-400">Empresa:</span> {c.empresa}</p>
+                  <p><span className="font-medium text-gray-400">Email:</span> {c.email}</p>
+                  <p><span className="font-medium text-gray-400">Tel:</span> {c.telefono}</p>
                 </div>
                 {esAdminOStaff && (
                   <div className="mt-4 flex gap-3 border-t pt-3 items-center">
@@ -235,7 +224,7 @@ const alternarEstado = async (id: string, estadoActual: boolean) => {
                       setEmpEdit(c.empresa); 
                     }} className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors">Editar</button>
                     
-                    <button onClick={() => alternarEstado(c.id, c.activo ?? true)} className="text-xs font-semibold text-gray-500 hover:text-gray-700 transition-colors">
+                    <button onClick={() => alternarEstado(c.id, c.activo)} className="text-xs font-semibold text-gray-500 hover:text-gray-700 transition-colors">
                       {c.activo ? 'Desactivar' : 'Activar'}
                     </button>
                     

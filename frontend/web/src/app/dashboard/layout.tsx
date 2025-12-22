@@ -41,7 +41,7 @@ export default function DashboardLayout({
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-slate-200 border-t-[#0D3A66] rounded-full animate-spin"></div>
+          <div className="w-12 h-12 border-4 border-slate-200 border-t-[#05ABCA] rounded-full animate-spin"></div>
           <p className="font-medium text-slate-500 animate-pulse font-montserrat">FJONIC Studio...</p>
         </div>
       </div>
@@ -54,7 +54,7 @@ export default function DashboardLayout({
   const esStaff = usuario.rol === 'staff';
   const esAdminOStaff = esAdmin || esStaff;
   
-  const isActive = (path: string) => pathname === path;
+  const isActive = (path: string) => pathname === path || pathname.startsWith(`${path}/`);
 
   return (
     <div className={`${montserrat.variable} ${openSans.variable} font-open-sans min-h-screen flex flex-col bg-[#F8FAFC]`}>
@@ -64,7 +64,7 @@ export default function DashboardLayout({
         <div className="flex items-center gap-3 cursor-pointer group" onClick={() => router.push('/dashboard')}>
           <Image src="/prototipo.png" alt="FJONIC Studio" width={42} height={42} className="transition-transform group-hover:scale-105" priority />
           <div className="flex flex-col">
-            <span className="text-[#0A1F33] font-black text-xl tracking-tighter font-montserrat leading-none">FJONIC</span>
+            <span className="text-[#0A1F33] font-black text-xl tracking-tighter font-montserrat leading-none text-nowrap">FJONIC</span>
             <span className="text-[#05ABCA] text-[10px] font-bold uppercase tracking-[0.3em] leading-none mt-1">Studio</span>
           </div>
         </div>
@@ -75,67 +75,65 @@ export default function DashboardLayout({
             <p className="text-sm font-bold text-slate-800 leading-none">{usuario?.nombre || usuario?.email}</p>
             <p className="text-[10px] font-black text-[#05ABCA] uppercase mt-1 tracking-widest">{usuario?.rol}</p>
           </div>
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#0D3A66] to-[#0A1F33] flex items-center justify-center text-white font-bold shadow-lg shadow-blue-900/10 uppercase">
+          <div className="w-10 h-10 rounded-2xl bg-[#0A1F33] border border-white/10 flex items-center justify-center text-white font-bold shadow-lg shadow-blue-900/10 uppercase">
             {usuario?.nombre?.charAt(0) || usuario?.email?.charAt(0)}
           </div>
         </div>
       </header>
 
       <div className="flex flex-1">
-        {/* 🌑 SIDEBAR */}
+        {/* 🌑 SIDEBAR EXCLUSIVA */}
         <aside className="w-72 bg-[#0A1F33] text-white flex flex-col shadow-2xl z-40 sticky top-20 h-[calc(100vh-5rem)]">
           <nav className="flex-1 p-6 space-y-1 overflow-y-auto custom-scrollbar text-sm font-medium">
             
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 ml-4">Menú Principal</p>
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 ml-4">Conserjería Digital</p>
             
-            <Link href="/dashboard" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard') ? 'bg-white/10 text-white font-bold shadow-inner' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+            <Link href="/dashboard" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${pathname === '/dashboard' ? 'bg-white/10 text-white font-bold shadow-inner border border-white/5' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
               Inicio
             </Link>
 
-            {/* 💎 APARTADO DE PLANES (Accesible para todos) */}
             <Link href="/dashboard/planes" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/planes') ? 'bg-[#05ABCA] text-white font-bold shadow-lg shadow-[#05ABCA]/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
               Nuestros Planes
             </Link>
 
-            {/* 🔒 PANEL EXCLUSIVO ADMIN */}
+            <Link href="/dashboard/portafolio" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/portafolio') ? 'bg-white/10 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2-2v12a2 2 0 002 2z" /></svg>
+              Portafolio
+            </Link>
+
+            {/* 🔒 ADMINISTRACIÓN (SOLO ADMIN) */}
             {esAdmin && (
               <div className="pt-6 mt-6 border-t border-white/10 space-y-1">
-                <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-4 ml-4">Administración</p>
+                <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-4 ml-4">Gobierno</p>
                 
-                <Link href="/dashboard/admin/usuarios" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/admin/usuarios') ? 'bg-amber-500 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                {/* 🆕 NUEVO: GESTIÓN DE SOPORTE PARA ADMIN */}
+                <Link href="/dashboard/soporte" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/admin/soporte') ? 'bg-amber-500 text-[#0A1F33] font-bold shadow-lg shadow-amber-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" /></svg>
+                  Gestión Soporte
+                </Link>
+
+                <Link href="/dashboard/admin/usuarios" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/admin/usuarios') ? 'bg-white/10 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
                   Gestión de Staff
                 </Link>
-
-                <Link href="/dashboard/admin/finanzas" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/admin/finanzas') ? 'bg-amber-500/10 text-amber-400 font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                <Link href="/dashboard/admin/finanzas" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/admin/finanzas') ? 'text-amber-400 font-bold bg-amber-500/5' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
                   Control Financiero
-                </Link>
-
-                <Link href="/dashboard/admin/editor-web" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/admin/editor-web') ? 'bg-amber-500/10 text-amber-400 font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                  Editor de Web
                 </Link>
               </div>
             )}
 
-            {/* 🛠️ PANEL OPERATIVO (ADMIN Y STAFF) */}
+            {/* 🛠️ OPERACIONES (ADMIN Y STAFF) */}
             {esAdminOStaff && (
               <div className="pt-6 mt-6 border-t border-white/10 space-y-1">
                 <p className="text-[10px] font-black text-[#05ABCA] uppercase tracking-widest mb-4 ml-4">Operaciones</p>
-                
                 <Link href="/dashboard/proyectos" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/proyectos') ? 'bg-white/10 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
                   Proyectos Activos
                 </Link>
-
                 <Link href="/dashboard/clientes" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/clientes') ? 'bg-white/10 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
                   Directorio Clientes
                 </Link>
-
-                <Link href="/dashboard/calendario" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/calendario') ? 'bg-white/10 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                  Agenda de Entregas
-                </Link>
-
                 <Link href="/dashboard/facturacion" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/facturacion') ? 'bg-white/10 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                  Recibos y Facturas
+                  Facturación
                 </Link>
               </div>
             )}
@@ -144,11 +142,11 @@ export default function DashboardLayout({
             {!esAdminOStaff && (
               <div className="pt-6 mt-6 border-t border-white/10 space-y-1">
                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 ml-4">Mi Cuenta</p>
-                <Link href="/dashboard/mis-pedidos" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/mis-pedidos') ? 'bg-white/10 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                  Mis Pedidos
+                <Link href="/dashboard/proyectos" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/proyectos') ? 'bg-[#05ABCA] text-white font-bold shadow-lg shadow-[#05ABCA]/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                   Mis proyectos
                 </Link>
-                <Link href="/dashboard/soporte" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/soporte') ? 'bg-white/10 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                  Soporte Técnico
+                <Link href="/dashboard/soporte" className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive('/dashboard/soporte') ? 'bg-white/10 text-white font-bold shadow-inner' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                   Soporte Técnico
                 </Link>
               </div>
             )}
@@ -156,7 +154,7 @@ export default function DashboardLayout({
             <div className="pt-8 mt-8 border-t border-white/5">
               <button 
                 onClick={() => { logout(); router.push('/login'); }} 
-                className="w-full flex items-center justify-between px-5 py-4 rounded-2xl bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white transition-all font-bold text-sm group"
+                className="w-full flex items-center justify-between px-5 py-4 rounded-2xl bg-rose-500/10 text-rose-400 hover:bg-rose-600 hover:text-white transition-all font-bold text-sm group"
               >
                 Cerrar sesión
                 <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -168,12 +166,13 @@ export default function DashboardLayout({
           
           <div className="p-6">
             <div className="bg-[#175A8C]/20 rounded-2xl p-4 border border-white/5 text-center">
-              <p className="text-[10px] font-bold text-blue-300 uppercase tracking-tighter italic leading-none">FJONIC Studio</p>
+              <p className="text-[10px] font-bold text-[#05ABCA] uppercase tracking-tighter italic leading-none">FJONIC Studio</p>
               <p className="text-[9px] text-slate-400 mt-1 uppercase tracking-widest leading-none">Master Panel v1.2</p>
             </div>
           </div>
         </aside>
 
+        {/* CONTENIDO PRINCIPAL */}
         <main className="flex-1 overflow-y-auto bg-[#F8FAFC]">
           <div className="max-w-7xl mx-auto p-6 md:p-10 min-h-screen">
             {children}
