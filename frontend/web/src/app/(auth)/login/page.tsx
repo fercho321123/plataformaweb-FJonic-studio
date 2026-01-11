@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // 1. Agregado useEffect
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { motion } from 'framer-motion';
@@ -15,15 +15,19 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false); // 2. Estado para control de hidratación
+
+  // 3. Efecto para confirmar que el cliente está listo
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    // Evitamos que el formulario recargue la página
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      // Verificación de conexión: Se usa la URL del backend desde el .env
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
         {
@@ -39,8 +43,6 @@ export default function LoginPage() {
       }
 
       const data = await res.json();
-      
-      // Guardamos sesión y redirigimos
       login(data.access_token, data.usuario);
       router.push('/dashboard');
     } catch (err: any) {
@@ -50,8 +52,16 @@ export default function LoginPage() {
     }
   };
 
+  // 4. Evita el renderizado hasta que el cliente esté montado
+  if (!mounted) {
+    return <div className="min-h-screen bg-[#0A1F33]" />;
+  }
+
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-[#0A1F33] via-[#0d2640] to-[#0A1F33] overflow-hidden flex items-center justify-center p-6">
+    <div 
+      className="fixed inset-0 bg-gradient-to-br from-[#0A1F33] via-[#0d2640] to-[#0A1F33] overflow-hidden flex items-center justify-center p-6"
+      suppressHydrationWarning // 5. Atributo de seguridad para atributos dinámicos
+    >
       
       {/* GRID ANIMADO DE FONDO */}
       <div 
