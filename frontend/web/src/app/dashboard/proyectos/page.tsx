@@ -1,200 +1,447 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { apiFetch } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
+import {
+  FiPlus,
+  FiTrash2,
+  FiCalendar,
+  FiUser,
+  FiDollarSign,
+  FiLayers,
+  FiCheckCircle,
+  FiZap,
+  FiActivity
+} from 'react-icons/fi';
 
-export default function ProyectosPage() {
-  const { usuario, token } = useAuth();
-  const router = useRouter();
-  const esAdminOStaff = usuario?.rol === 'admin' || usuario?.rol === 'staff';
-
+export default function PaginaProyectos() {
+  const { token } = useAuth();
   const [proyectos, setProyectos] = useState<any[]>([]);
-  const [clientes, setClientes] = useState<any[]>([]); // Para el selector del formulario
-  const [loading, setLoading] = useState(true);
+  const [clientes, setClientes] = useState<any[]>([]);
+  const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
 
-  // Estados para creación (Siguiendo la lógica de Clientes)
-  const [nombre, setNombre] = useState('');
-  const [descripcion, setDescripcion] = useState('');
-  const [clienteId, setClienteId] = useState('');
+  const [datosForm, setDatosForm] = useState({
+    nombre: '',
+    clienteId: '',
+    tipo: 'Marketing Digital',
+    prioridad: 'Media',
+    liderProyecto: '',
+    fechaEntrega: '',
+    presupuestoTotal: '',
+    descripcion: '',
+    estadoPago: 'Pendiente'
+  });
 
-  const cargarDatos = async () => {
-    if (!usuario || !token) return;
+  const cargarTodo = async () => {
     try {
-      setLoading(true);
-      // Cargar Proyectos
-      const endpoint = usuario.rol === 'admin' ? '/proyectos' : '/proyectos/mis-proyectos';
-      const dataProyectos = await apiFetch(endpoint);
-      if (dataProyectos) {
-        setProyectos(Array.isArray(dataProyectos) ? dataProyectos : []);
-      }
+      setCargando(true);
+      const [resProyectos, resClientes] = await Promise.all([
+        fetch('http://localhost:3001/proyectos', { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch('http://localhost:3001/clientes', { headers: { 'Authorization': `Bearer ${token}` } })
+      ]);
 
-      // Cargar Clientes (Solo si es admin/staff para el formulario)
-      if (esAdminOStaff) {
-        const dataClientes = await apiFetch('/clientes');
-        if (dataClientes) setClientes(dataClientes);
-      }
-    } catch (err) {
-      setError('Error al sincronizar con el servidor');
+      const dataProyectos = await resProyectos.json();
+      const dataClientes = await resClientes.json();
+
+      setProyectos(Array.isArray(dataProyectos) ? dataProyectos : []);
+      setClientes(Array.isArray(dataClientes) ? dataClientes : []);
+    } catch {
+      setError('Error al conectar con el servidor');
     } finally {
-      setLoading(false);
+      setCargando(false);
     }
   };
 
   useEffect(() => {
-    cargarDatos();
-  }, [usuario, token]);
+    if (token) cargarTodo();
+  }, [token]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const manejarEnvio = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await apiFetch('/proyectos', {
+      const res = await fetch('http://localhost:3001/proyectos', {
         method: 'POST',
-        body: JSON.stringify({ 
-          nombre, 
-          descripcion, 
-          clienteId: Number(clienteId),
-          estado: 'Iniciado' // Valor por defecto
-        }),
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(datosForm),
       });
-      
-      if (res) {
-        setNombre(''); setDescripcion(''); setClienteId('');
-        cargarDatos();
+
+      if (res.ok) {
+        setDatosForm({
+          nombre: '', clienteId: '', tipo: 'Marketing Digital',
+          prioridad: 'Media', liderProyecto: '', fechaEntrega: '',
+          presupuestoTotal: '', descripcion: '', estadoPago: 'Pendiente'
+        });
+        cargarTodo();
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch {
+      setError('No se pudo crear el proyecto');
     }
   };
 
-  const eliminarProyecto = async (id: number) => {
-    if (!confirm('¿Seguro que deseas eliminar este proyecto?')) return;
-    try {
-      await apiFetch(`/proyectos/${id}`, { method: 'DELETE' });
-      setProyectos(prev => prev.filter(p => p.id !== id));
-    } catch (err) {
-      alert('No se pudo eliminar el proyecto');
+  const eliminarProyecto = async (id: string) => {
+    if (!confirm('¿Borrar este proyecto? Se perderá todo el historial.')) return;
+    await fetch(`http://localhost:3001/proyectos/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    setProyectos(prev => prev.filter(p => p.id !== id));
+  };
+
+  const obtenerColorPrioridad = (prioridad: string) => {
+    switch(prioridad) {
+      case 'Alta': return 'from-red-500/20 to-red-600/10 border-red-500/30 text-red-400';
+      case 'Media': return 'from-amber-500/20 to-amber-600/10 border-amber-500/30 text-amber-400';
+      case 'Baja': return 'from-emerald-500/20 to-emerald-600/10 border-emerald-500/30 text-emerald-400';
+      default: return 'from-slate-500/20 to-slate-600/10 border-slate-500/30 text-slate-400';
     }
   };
 
-  if (loading && proyectos.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <div className="w-12 h-12 border-4 border-slate-200 border-t-[#05ABCA] rounded-full animate-spin"></div>
-        <p className="mt-4 text-slate-400 font-black uppercase tracking-widest text-[10px]">Cargando Proyectos...</p>
-      </div>
-    );
-  }
+  const obtenerNombreCliente = (clienteId: string) => {
+    const cliente = clientes.find(c => c.id === clienteId);
+    return cliente?.empresa || 'Sin cliente';
+  };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-10 p-6">
-      {/* Cabecera Unificada */}
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-100 pb-8">
-        <div>
-          <h1 className="text-5xl font-black text-[#0A1F33] tracking-tight uppercase">
-            {usuario?.rol === 'admin' ? 'Gestión de' : 'Mis'} <span className="text-[#05ABCA]">Proyectos</span>
-          </h1>
-          <p className="text-slate-400 mt-2 font-medium italic">
-            {usuario?.rol === 'admin' ? 'Panel administrativo central' : `Bienvenido, ${usuario?.nombre}.`}
-          </p>
-        </div>
-        <div className="bg-white px-6 py-3 rounded-2xl border border-slate-100 shadow-sm">
-          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">Total Activos</span>
-          <span className="text-2xl font-black text-[#0A1F33]">{proyectos.length}</span>
+    <div className="min-h-screen bg-gradient-to-br from-[#0A1F33] via-[#0d2640] to-[#0A1F33]">
+      
+      {/* GRID DE FONDO TECNOLÓGICO */}
+      <div className="fixed inset-0 opacity-[0.03]" 
+        style={{
+          backgroundImage: `linear-gradient(#05ABCA 1px, transparent 1px), linear-gradient(90deg, #05ABCA 1px, transparent 1px)`,
+          backgroundSize: '50px 50px'
+        }}
+      />
+
+      {/* LÍNEAS BRILLANTES ANIMADAS */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          className="absolute h-px bg-gradient-to-r from-transparent via-[#05ABCA]/50 to-transparent"
+          style={{ width: '100%', top: '20%' }}
+          animate={{ x: ['-100%', '100%'] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+        />
+        <motion.div
+          className="absolute w-px bg-gradient-to-b from-transparent via-[#1C75BC]/50 to-transparent"
+          style={{ height: '100%', left: '30%' }}
+          animate={{ y: ['-100%', '100%'] }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
+        />
+      </div>
+
+      {/* HEADER FUTURISTA */}
+      <header className="relative border-b border-[#05ABCA]/10 bg-[#0A1F33]/40 backdrop-blur-xl">
+        <div className="max-w-[1600px] mx-auto px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-1 h-8 bg-gradient-to-b from-[#05ABCA] to-[#1C75BC] rounded-full" />
+                <h1 className="text-3xl font-bold text-white tracking-tight">
+                  Proyectos
+                </h1>
+                <motion.div
+                  className="w-2 h-2 rounded-full bg-[#05ABCA]"
+                  animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+              </div>
+              <p className="text-[#05ABCA]/60 text-sm font-medium ml-4">
+                Gestión inteligente de proyectos y operaciones
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-6">
+              <div className="text-right">
+                <div className="text-2xl font-bold text-[#05ABCA]">{proyectos.length}</div>
+                <div className="text-xs text-slate-400 uppercase tracking-wider">Activos</div>
+              </div>
+              <div className="w-px h-12 bg-[#05ABCA]/20" />
+              <FiActivity className="text-[#05ABCA] animate-pulse" size={24} />
+            </div>
+          </div>
         </div>
       </header>
 
-      {/* Formulario de Creación (Diseño idéntico al de Clientes pero con estilo Proyectos) */}
-      {esAdminOStaff && (
-        <section className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 max-w-4xl">
-          <h2 className="text-lg font-bold text-[#0A1F33] mb-6 uppercase tracking-wider flex items-center gap-2">
-            <span className="w-1.5 h-5 bg-[#05ABCA] rounded-full"></span>
-            Crear nuevo proyecto
-          </h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input className="border-none bg-slate-50 p-4 rounded-xl text-black outline-none focus:ring-2 focus:ring-[#05ABCA] text-sm" placeholder="Nombre del Proyecto" value={nombre} onChange={(e) => setNombre(e.target.value)} required />
-              <select className="border-none bg-slate-50 p-4 rounded-xl text-black outline-none focus:ring-2 focus:ring-[#05ABCA] text-sm" value={clienteId} onChange={(e) => setClienteId(e.target.value)} required>
-                <option value="">Seleccionar Cliente</option>
-                {clientes.map(c => <option key={c.id} value={c.id}>{c.nombre} ({c.empresa})</option>)}
-              </select>
-            </div>
-            <textarea className="w-full border-none bg-slate-50 p-4 rounded-xl text-black outline-none focus:ring-2 focus:ring-[#05ABCA] text-sm h-24" placeholder="Descripción técnica..." value={descripcion} onChange={(e) => setDescripcion(e.target.value)} required />
-            <button className="bg-[#0A1F33] text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-[#05ABCA] transition-all shadow-lg active:scale-95">
-              Registrar Proyecto
-            </button>
-            {error && <p className="text-red-500 text-[10px] font-bold mt-2 uppercase">{error}</p>}
-          </form>
-        </section>
-      )}
+      <main className="relative max-w-[1600px] mx-auto px-8 py-10 grid grid-cols-1 xl:grid-cols-12 gap-8">
 
-      {/* Listado de Proyectos */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <AnimatePresence mode='popLayout'>
-          {proyectos.length === 0 ? (
-            <p className="text-slate-400 italic">No hay proyectos registrados.</p>
-          ) : proyectos.map((p) => (
-            <motion.div 
-              key={p.id}
-              layout
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm hover:shadow-xl transition-all group"
-            >
-              <div className="flex justify-between items-start mb-6">
-                <span className="px-4 py-1.5 bg-[#05ABCA]/10 text-[#05ABCA] text-[9px] font-black uppercase tracking-widest rounded-full">
-                  {p.estado}
-                </span>
-                <div className="text-right">
-                  <p className="text-[9px] font-black text-slate-300 uppercase">Avance</p>
-                  <p className="text-xl font-black text-[#0A1F33]">{p.progreso || 0}%</p>
+        {/* PANEL DE CREACIÓN FUTURISTA */}
+        <aside className="xl:col-span-4">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="sticky top-6"
+          >
+            <div className="relative bg-gradient-to-br from-[#0d2640]/80 to-[#0A1F33]/80 backdrop-blur-xl rounded-2xl border border-[#05ABCA]/20 overflow-hidden">
+              
+              {/* GLOW EFFECT */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-px bg-gradient-to-r from-transparent via-[#05ABCA] to-transparent" />
+              
+              {/* HEADER */}
+              <div className="relative p-6 border-b border-[#05ABCA]/10">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#05ABCA] to-[#1C75BC] flex items-center justify-center">
+                    <FiPlus className="text-white" size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-white">Nuevo Proyecto</h2>
+                    <p className="text-xs text-[#05ABCA]/60">Inicializar configuración</p>
+                  </div>
                 </div>
               </div>
 
-              <h3 className="text-2xl font-black text-[#0A1F33] leading-tight mb-2 group-hover:text-[#05ABCA] transition-colors uppercase tracking-tighter">
-                {p.nombre}
-              </h3>
-              
-              <p className="text-slate-400 text-sm mb-6 line-clamp-2 italic font-medium">
-                {p.descripcion || 'Sin descripción.'}
-              </p>
+              {/* FORMULARIO */}
+              <div className="p-6">
+                <div className="space-y-5">
+                  
+                  {/* Nombre */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-[#05ABCA] uppercase tracking-wider flex items-center gap-2">
+                      <FiLayers size={12} />
+                      Nombre del Proyecto
+                    </label>
+                    <input
+                      placeholder="Proyecto Alpha..."
+                      className="w-full bg-[#0A1F33]/50 border border-[#05ABCA]/20 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-[#05ABCA] focus:bg-[#0A1F33]/80 transition-all"
+                      value={datosForm.nombre}
+                      onChange={(e) => setDatosForm({ ...datosForm, nombre: e.target.value })}
+                      required
+                    />
+                  </div>
 
-              {/* Barra de progreso */}
-              <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden mb-8">
-                <motion.div 
-                  initial={{ width: 0 }}
-                  animate={{ width: `${p.progreso || 0}%` }}
-                  className="h-full bg-[#05ABCA] shadow-[0_0_8px_rgba(5,171,202,0.4)]"
-                />
-              </div>
+                  {/* Cliente */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-[#05ABCA] uppercase tracking-wider flex items-center gap-2">
+                      <FiUser size={12} />
+                      Cliente Asignado
+                    </label>
+                    <select
+                      className="w-full bg-[#0A1F33]/50 border border-[#05ABCA]/20 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#05ABCA] focus:bg-[#0A1F33]/80 transition-all cursor-pointer"
+                      value={datosForm.clienteId}
+                      onChange={(e) => setDatosForm({ ...datosForm, clienteId: e.target.value })}
+                      required
+                    >
+                      <option value="" className="bg-[#0A1F33]">Seleccionar cliente...</option>
+                      {clientes.map(c => (
+                        <option key={c.id} value={c.id} className="bg-[#0A1F33]">{c.empresa}</option>
+                      ))}
+                    </select>
+                  </div>
 
-              <div className="flex items-center justify-between pt-6 border-t border-slate-50">
-                <button 
-                  onClick={() => router.push(`/dashboard/proyectos/${p.id}/actualizaciones`)}
-                  className="flex items-center gap-2 bg-[#0A1F33] hover:bg-[#05ABCA] text-white px-5 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
-                >
-                  Bitácora
-                </button>
-                
-                {esAdminOStaff && (
-                  <button 
-                    onClick={() => eliminarProyecto(p.id)}
-                    className="text-red-400 hover:text-red-600 transition-colors"
+                  {/* Tipo y Prioridad */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-[#05ABCA] uppercase tracking-wider">
+                        Tipo
+                      </label>
+                      <select
+                        className="w-full bg-[#0A1F33]/50 border border-[#05ABCA]/20 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#05ABCA] transition-all cursor-pointer"
+                        value={datosForm.tipo}
+                        onChange={(e) => setDatosForm({ ...datosForm, tipo: e.target.value })}
+                      >
+                        <option className="bg-[#0A1F33]">Marketing Digital</option>
+                        <option className="bg-[#0A1F33]">Desarrollo Web</option>
+                        <option className="bg-[#0A1F33]">Branding</option>
+                        <option className="bg-[#0A1F33]">Pauta Publicitaria</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-[#05ABCA] uppercase tracking-wider">
+                        Prioridad
+                      </label>
+                      <select
+                        className="w-full bg-[#0A1F33]/50 border border-[#05ABCA]/20 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#05ABCA] transition-all cursor-pointer"
+                        value={datosForm.prioridad}
+                        onChange={(e) => setDatosForm({ ...datosForm, prioridad: e.target.value })}
+                      >
+                        <option value="Alta" className="bg-[#0A1F33]">Alta</option>
+                        <option value="Media" className="bg-[#0A1F33]">Media</option>
+                        <option value="Baja" className="bg-[#0A1F33]">Baja</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Responsable */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-[#05ABCA] uppercase tracking-wider">
+                      Responsable
+                    </label>
+                    <input
+                      placeholder="Nombre del líder..."
+                      className="w-full bg-[#0A1F33]/50 border border-[#05ABCA]/20 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-[#05ABCA] transition-all"
+                      value={datosForm.liderProyecto}
+                      onChange={(e) => setDatosForm({ ...datosForm, liderProyecto: e.target.value })}
+                    />
+                  </div>
+
+                  {/* Fecha */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-[#05ABCA] uppercase tracking-wider flex items-center gap-2">
+                      <FiCalendar size={12} />
+                      Fecha de Entrega
+                    </label>
+                    <input
+                      type="date"
+                      className="w-full bg-[#0A1F33]/50 border border-[#05ABCA]/20 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#05ABCA] transition-all"
+                      value={datosForm.fechaEntrega}
+                      onChange={(e) => setDatosForm({ ...datosForm, fechaEntrega: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  {/* Presupuesto */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-[#05ABCA] uppercase tracking-wider flex items-center gap-2">
+                      <FiDollarSign size={12} />
+                      Presupuesto Total
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#05ABCA] font-bold">$</span>
+                      <input
+                        type="number"
+                        placeholder="0"
+                        className="w-full bg-[#0A1F33]/50 border border-[#05ABCA]/20 rounded-xl pl-8 pr-4 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-[#05ABCA] transition-all"
+                        value={datosForm.presupuestoTotal}
+                        onChange={(e) => setDatosForm({ ...datosForm, presupuestoTotal: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Botón Submit */}
+                  <motion.button
+                    type="button"
+                    onClick={manejarEnvio}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="w-full bg-gradient-to-r from-[#05ABCA] to-[#1C75BC] text-white py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#05ABCA]/20 hover:shadow-[#05ABCA]/40 transition-all"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                )}
+                    <FiZap size={16} />
+                    Inicializar Proyecto
+                  </motion.button>
+                </div>
               </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
+            </div>
+          </motion.div>
+        </aside>
+
+        {/* TABLA FUTURISTA */}
+        <section className="xl:col-span-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative bg-gradient-to-br from-[#0d2640]/80 to-[#0A1F33]/80 backdrop-blur-xl rounded-2xl border border-[#05ABCA]/20 overflow-hidden"
+          >
+            
+            {/* GLOW TOP */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-px bg-gradient-to-r from-transparent via-[#05ABCA] to-transparent" />
+
+            {/* TABLA */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="border-b border-[#05ABCA]/10">
+                  <tr className="text-left">
+                    <th className="px-6 py-4 font-semibold text-[#05ABCA] uppercase tracking-wider text-xs">
+                      Proyecto
+                    </th>
+                    <th className="px-6 py-4 font-semibold text-[#05ABCA] uppercase tracking-wider text-xs">
+                      Cliente
+                    </th>
+                    <th className="px-6 py-4 font-semibold text-[#05ABCA] uppercase tracking-wider text-xs">
+                      Tipo
+                    </th>
+                    <th className="px-6 py-4 font-semibold text-[#05ABCA] uppercase tracking-wider text-xs">
+                      Prioridad
+                    </th>
+                    <th className="px-6 py-4 font-semibold text-[#05ABCA] uppercase tracking-wider text-xs">
+                      Responsable
+                    </th>
+                    <th className="px-6 py-4 font-semibold text-[#05ABCA] uppercase tracking-wider text-xs">
+                      Entrega
+                    </th>
+                    <th className="px-6 py-4 font-semibold text-[#05ABCA] uppercase tracking-wider text-xs">
+                      Presupuesto
+                    </th>
+                    <th className="px-6 py-4"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <AnimatePresence>
+                    {proyectos.map((p, index) => (
+                      <motion.tr
+                        key={p.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="border-b border-[#05ABCA]/5 hover:bg-[#05ABCA]/5 transition-colors group"
+                      >
+                        <td className="px-6 py-4">
+                          <div className="font-semibold text-white">{p.nombre}</div>
+                          <div className="text-xs text-slate-400 mt-0.5">{p.tipo}</div>
+                        </td>
+                        <td className="px-6 py-4 text-slate-300">
+                          {obtenerNombreCliente(p.clienteId)}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-[#1C75BC]/20 text-[#1C75BC] border border-[#1C75BC]/30">
+                            {p.tipo}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r border ${obtenerColorPrioridad(p.prioridad)}`}>
+                            <motion.div
+                              className="w-1.5 h-1.5 rounded-full bg-current"
+                              animate={{ scale: [1, 1.3, 1] }}
+                              transition={{ duration: 2, repeat: Infinity }}
+                            />
+                            {p.prioridad}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-slate-300">
+                          {p.liderProyecto || '—'}
+                        </td>
+                        <td className="px-6 py-4 text-[#05ABCA] font-medium">
+                          {p.fechaEntrega}
+                        </td>
+                        <td className="px-6 py-4 font-bold text-white">
+                          ${Number(p.presupuestoTotal).toLocaleString('es-CO')}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button
+                            onClick={() => eliminarProyecto(p.id)}
+                            className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+                          >
+                            <FiTrash2 size={16} />
+                          </button>
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </AnimatePresence>
+                </tbody>
+              </table>
+
+              {proyectos.length === 0 && (
+                <div className="py-32 text-center">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#05ABCA]/20 to-[#1C75BC]/20 border border-[#05ABCA]/30 flex items-center justify-center mx-auto mb-6"
+                  >
+                    <FiCheckCircle className="text-[#05ABCA]" size={36} />
+                  </motion.div>
+                  <p className="text-slate-400 font-medium text-lg mb-2">
+                    Sin proyectos activos
+                  </p>
+                  <p className="text-slate-500 text-sm">
+                    Inicializa tu primer proyecto para comenzar
+                  </p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </section>
+      </main>
     </div>
   );
 }

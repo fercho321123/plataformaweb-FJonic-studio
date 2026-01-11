@@ -1,234 +1,412 @@
 'use client';
 
-import React, { useState } from 'react';
-import { motion, Variants } from 'framer-motion';
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { motion } from 'framer-motion';
+import { apiFetch } from '@/lib/api';
+import { 
+  FiUsers, 
+  FiMonitor, 
+  FiTrendingUp, 
+  FiBarChart2, 
+  FiZap,
+  FiArrowUpRight,
+  FiCheckCircle,
+  FiActivity,
+  FiClock,
+  FiDollarSign,
+  FiTarget,
+  FiAward
+} from 'react-icons/fi';
 
-// --- ICONOS MINIMALISTAS CORREGIDOS (USANDO SPAN PARA EVITAR ERRORES DE ANIDAMIENTO) ---
-const IconPlus = () => (
-  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-    <path d="M12 4v16m8-8H4" />
-  </svg>
-);
+export default function DashboardPage() {
+  const { usuario } = useAuth();
+  const [stats, setStats] = useState({
+    clientes: 0,
+    proyectos: 0,
+    campanasActivas: 0,
+    roiPromedio: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [time, setTime] = useState(new Date());
 
-const IconDot = () => (
-  <span className="inline-block w-2 h-2 rounded-full bg-[#05ABCA] flex-shrink-0" />
-);
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
-export default function DashboardExclusivo() {
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  useEffect(() => {
+    const fetchAgencyData = async () => {
+      try {
+        const [c, p] = await Promise.all([
+          apiFetch('/clientes'),
+          apiFetch('/proyectos')
+        ]);
+        
+        setStats({
+          clientes: Array.isArray(c) ? c.length : 0,
+          proyectos: Array.isArray(p) ? p.length : 0,
+          campanasActivas: Array.isArray(p) ? p.filter((item: any) => item.estado === 'iniciado').length : 0,
+          roiPromedio: 24.5
+        });
+      } catch (error) {
+        console.error("Error cargando datos de agencia", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAgencyData();
+  }, []);
 
-  // Configuración de animaciones profesional
-  const fadeInUp: Variants = {
-    initial: { opacity: 0, y: 30 },
-    animate: { 
-      opacity: 1, 
-      y: 0,
-      transition: { duration: 0.8, ease: "easeOut" } 
-    }
-  };
+  const cards = [
+    { 
+      title: 'Cuentas Activas', 
+      value: stats.clientes, 
+      icon: <FiUsers />, 
+      gradient: 'from-blue-500 to-blue-600',
+      desc: 'Clientes en cartera',
+      trend: '+12%'
+    },
+    { 
+      title: 'Proyectos/Kits', 
+      value: stats.proyectos, 
+      icon: <FiMonitor />, 
+      gradient: 'from-[#05ABCA] to-[#1C75BC]',
+      desc: 'En desarrollo',
+      trend: '+8%'
+    },
+    { 
+      title: 'ROI Promedio', 
+      value: `${stats.roiPromedio}%`, 
+      icon: <FiTrendingUp />, 
+      gradient: 'from-emerald-500 to-emerald-600',
+      desc: 'Rendimiento',
+      trend: '+5.2%'
+    },
+    { 
+      title: 'Campañas Live', 
+      value: stats.campanasActivas, 
+      icon: <FiZap />, 
+      gradient: 'from-amber-500 to-amber-600',
+      desc: 'En tiempo real',
+      trend: 'Activas'
+    },
+  ];
 
-  const staggerContainer: Variants = {
-    animate: { 
-      transition: { staggerChildren: 0.15 } 
-    }
-  };
+  const recentActivity = [
+    { action: 'Nuevo proyecto creado', client: 'TechCorp Solutions', time: '2 min ago', type: 'project' },
+    { action: 'Factura generada', client: 'Fashion Brand Co', time: '15 min ago', type: 'invoice' },
+    { action: 'Cliente registrado', client: 'StartUp Inc', time: '1 hora ago', type: 'client' },
+  ];
+
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <motion.div
+        className="w-16 h-16 border-4 border-[#05ABCA]/20 border-t-[#05ABCA] rounded-full"
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+      />
+    </div>
+  );
 
   return (
-    <motion.div 
-      initial="initial" 
-      animate="animate"
-      variants={staggerContainer}
-      className="space-y-24 pb-32 max-w-[1400px] mx-auto px-4 md:px-8"
-    >
-      
-      {/* 🖤 SECCIÓN 1: EL MANIFIESTO */}
-      <section className="relative pt-12">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-end">
-          <div className="lg:col-span-8">
-            <motion.span variants={fadeInUp} className="text-[#05ABCA] font-black uppercase tracking-[0.6em] text-[10px] mb-6 block">
-              Potencia Creativa
-            </motion.span>
-            <motion.h1 
-              variants={fadeInUp}
-              className="text-5xl md:text-8xl font-black text-[#0A1F33] leading-[0.9] font-montserrat tracking-tighter"
-            >
-              Diseñamos el <br /> 
-              <span className="text-[#05ABCA]">Impacto Digital.</span>
-            </motion.h1>
-          </div>
-          <div className="lg:col-span-4 pb-4">
-            <motion.div variants={fadeInUp} className="text-slate-500 text-lg leading-relaxed font-medium border-l-2 border-slate-100 pl-8">
-              En <strong className="text-[#0A1F33]">FJONIC Studio</strong>, desafiamos lo convencional para elevar marcas al nivel de sofisticación que el mercado global exige.
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* 🚀 SECCIÓN 2: PILARES DE EXCELENCIA */}
-      <section>
-        <motion.div 
-          variants={staggerContainer}
-          className="grid grid-cols-1 md:grid-cols-3 gap-px bg-slate-100 border border-slate-100 rounded-[3rem] overflow-hidden shadow-2xl shadow-slate-200/50"
-        >
-          {[
-            { 
-              num: "01", 
-              title: "Nuestra Misión", 
-              desc: "Transformar la visión de nuestros clientes en ecosistemas digitales que definan el nuevo estándar de su industria.",
-              label: "Estrategia" 
-            },
-            { 
-              num: "02", 
-              title: "Nuestra Visión", 
-              desc: "Ser el epicentro global de la innovación creativa, donde cada proyecto sea una obra maestra técnica.",
-              label: "Innovación"
-            },
-            { 
-              num: "03", 
-              title: "Valores Core", 
-              desc: "Excelencia intransigente, transparencia absoluta y una obsesión por el detalle en cada desarrollo.",
-              label: "Cultura"
-            }
-          ].map((pillar, i) => (
-            <motion.div 
-              key={i}
-              variants={fadeInUp}
-              whileHover={{ backgroundColor: "#F8FAFC" }}
-              className="bg-white p-12 flex flex-col justify-between h-[400px] transition-colors group"
-            >
-              <div>
-                <span className="text-4xl font-black text-slate-100 group-hover:text-[#05ABCA]/20 transition-colors font-montserrat">
-                  {pillar.num}
-                </span>
-                <p className="text-[#05ABCA] text-[10px] font-black uppercase tracking-widest mt-4">{pillar.label}</p>
-                <h3 className="text-2xl font-black text-[#0A1F33] mt-2 font-montserrat">{pillar.title}</h3>
-              </div>
-              <p className="text-slate-500 text-sm leading-relaxed font-medium">
-                {pillar.desc}
-              </p>
-            </motion.div>
-          ))}
-        </motion.div>
-      </section>
-
-      {/* 👥 SECCIÓN 3: LIDERAZGO EJECUTIVO */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
-        <div className="lg:col-span-4 sticky top-32">
-          <motion.h2 variants={fadeInUp} className="text-4xl font-black text-[#0A1F33] font-montserrat tracking-tighter">Dirección <br />Estratégica.</motion.h2>
-          <motion.p variants={fadeInUp} className="text-slate-400 mt-6 text-sm font-medium leading-relaxed max-w-xs">
-            Especialistas enfocados en la ejecución técnica y la dirección de proyectos de alto impacto.
-          </motion.p>
-        </div>
-
-        <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-12">
-          {[
-            { name: "Brayan Fernando Jimenez", role: "CEO / Director Creativo", img: "/equipo/fernando.png", bio: "Estratega de marca con enfoque en disrupción visual y comercial." },
-            { name: "Yuli Johana Rodriguez", role: "CTO / Líder Tecnológica", img: "/equipo/yuli.png", bio: "Arquitecta de software especializada en sistemas escalables." }
-          ].map((m, i) => (
-            <motion.div 
-              key={i}
-              variants={fadeInUp}
-              whileHover={{ y: -10 }}
-              className="group"
-            >
-              <div className="relative aspect-[4/5] bg-slate-50 rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-sm">
-                <img 
-                   src={m.img} 
-                   alt={m.name} 
-                   className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0A1F33] via-transparent to-transparent opacity-60"></div>
-                <div className="absolute bottom-10 left-10 text-white">
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#05ABCA] mb-2">Socio</p>
-                  <h4 className="text-xl font-black font-montserrat">{m.name}</h4>
-                </div>
-              </div>
-              <div className="mt-6 px-4">
-                <p className="text-xs font-black text-[#0A1F33] uppercase tracking-widest">{m.role}</p>
-                <p className="text-slate-400 text-xs mt-2 font-medium">{m.bio}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* 🛠️ SECCIÓN 4: STACK TÉCNICO */}
-      <motion.section 
-        variants={fadeInUp}
-        className="bg-[#0A1F33] rounded-[4rem] p-12 md:p-24 text-white relative overflow-hidden"
-      >
-        <div className="relative z-10 flex flex-col md:flex-row justify-between gap-16">
-          <div className="max-w-md">
-            <h3 className="text-3xl font-black font-montserrat mb-8">Ecosistema Tecnológico.</h3>
-            <p className="text-slate-400 text-sm leading-relaxed mb-12">
-              Arquitecturas modernas diseñadas para escalar sin límites, optimizadas para rendimiento y seguridad.
+    <div className="space-y-8">
+      {/* HEADER FUTURISTA */}
+      <header className="relative">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-1 h-10 bg-gradient-to-b from-[#05ABCA] to-[#1C75BC] rounded-full" />
+              <h1 className="text-4xl font-bold text-white tracking-tight">
+                FJONIC <span className="text-[#05ABCA]">Command Center</span>
+              </h1>
+            </div>
+            <p className="text-slate-400 text-sm font-medium ml-4">
+              Bienvenido, <span className="text-[#05ABCA] font-semibold">{usuario?.nombre}</span>. Sistema operativo activo.
             </p>
-            <div className="flex flex-wrap gap-4">
-               {["Next.js", "TypeScript", "Node.js", "Tailwind"].map((t, i) => (
-                 <span key={i} className="px-4 py-2 bg-white/5 rounded-full text-[10px] font-bold tracking-widest uppercase border border-white/10">{t}</span>
-               ))}
+          </div>
+          
+          <div className="flex items-center gap-4">
+            {/* RELOJ DIGITAL */}
+            <div className="bg-gradient-to-br from-[#0d2640]/80 to-[#0A1F33]/80 backdrop-blur-xl border border-[#05ABCA]/20 rounded-xl px-6 py-3">
+              <div className="flex items-center gap-3">
+                <FiClock className="text-[#05ABCA]" size={18} />
+                <div className="text-right">
+                  <div className="text-xl font-bold text-white tabular-nums">
+                    {time.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                  </div>
+                  <div className="text-[10px] text-slate-400 uppercase tracking-wider">
+                    {time.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* STATUS */}
+            <div className="bg-gradient-to-br from-[#0d2640]/80 to-[#0A1F33]/80 backdrop-blur-xl border border-[#05ABCA]/20 rounded-xl px-5 py-3 flex items-center gap-3">
+              <motion.div
+                className="w-2.5 h-2.5 bg-emerald-500 rounded-full"
+                animate={{ scale: [1, 1.2, 1], opacity: [1, 0.8, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+              <span className="text-[10px] font-bold uppercase text-emerald-400 tracking-widest">Sistema Online</span>
             </div>
           </div>
-
-          <div className="grid grid-cols-2 gap-x-12 gap-y-12">
-            {[
-              { label: "Rendimiento", val: "100ms" },
-              { label: "Disponibilidad", val: "99.9%" },
-              { label: "Seguridad", val: "Nivel 4" },
-              { label: "Respuesta", val: "Instante" }
-            ].map((stat, i) => (
-              <div key={i} className="border-l border-[#05ABCA] pl-8">
-                <p className="text-3xl font-black font-montserrat text-white">{stat.val}</p>
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mt-2">{stat.label}</p>
-              </div>
-            ))}
-          </div>
         </div>
-      </motion.section>
+        <div className="h-px bg-gradient-to-r from-[#05ABCA]/50 via-[#05ABCA]/20 to-transparent mt-6" />
+      </header>
 
-      {/* 📍 SECCIÓN 5: CONSULTAS (FAQ) CORREGIDA */}
-      <section className="max-w-4xl mx-auto">
-        <div className="flex items-center gap-6 mb-16">
-           <h2 className="text-2xl font-black text-[#0A1F33] font-montserrat uppercase tracking-tighter">Análisis de Negocio</h2>
-           <div className="h-px flex-1 bg-slate-100"></div>
-        </div>
-        
-        <div className="space-y-8">
-          {[
-            { q: "¿Cómo se diferencia FJONIC Studio de otras agencias?", a: "Fusionamos análisis de datos con diseño emocional para crear activos comerciales que se traducen en resultados medibles." },
-            { q: "¿Cuál es el proceso para un nuevo proyecto?", a: "Iniciamos con auditoría estratégica, seguida de prototipado de alta fidelidad y desarrollo ágil escalable." }
-          ].map((item, i) => (
-            <div 
-              key={i} 
-              className="cursor-pointer group border-b border-slate-50 pb-8"
-              onClick={() => setOpenFaq(openFaq === i ? null : i)}
-            >
-              <div className="flex items-center justify-between">
-                {/* CAMBIADO P POR DIV PARA EVITAR ERROR DE HIDRATACIÓN */}
-                <div className="text-sm font-black text-[#0A1F33] uppercase tracking-widest flex items-center gap-3">
-                  <IconDot /> 
-                  <span>{item.q}</span>
+      {/* MÉTRICAS PRINCIPALES */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {cards.map((card, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1 }}
+            className="relative bg-gradient-to-br from-[#0d2640]/80 to-[#0A1F33]/80 backdrop-blur-xl rounded-2xl border border-[#05ABCA]/20 overflow-hidden group hover:border-[#05ABCA]/40 transition-all"
+          >
+            {/* GLOW TOP */}
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#05ABCA]/50 to-transparent" />
+            
+            <div className="p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${card.gradient} flex items-center justify-center text-white text-xl shadow-lg`}>
+                  {card.icon}
                 </div>
-                <div className={`transition-transform duration-300 ${openFaq === i ? 'rotate-45 text-[#05ABCA]' : ''}`}>
-                  <IconPlus />
+                <span className="text-xs font-bold text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-md">
+                  {card.trend}
+                </span>
+              </div>
+              
+              <p className="text-[10px] font-semibold uppercase text-[#05ABCA] tracking-widest mb-2">
+                {card.title}
+              </p>
+              <div className="flex items-end gap-2">
+                <h2 className="text-3xl font-black text-white">{card.value}</h2>
+                <span className="text-xs text-slate-400 font-medium mb-1">{card.desc}</span>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* PANEL PRINCIPAL */}
+        <div className="lg:col-span-2 space-y-8">
+          
+          {/* CENTRAL DE ESTRATEGIAS */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="relative bg-gradient-to-br from-[#0d2640] to-[#0A1F33] rounded-2xl border border-[#05ABCA]/20 overflow-hidden shadow-2xl shadow-black/20"
+          >
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#05ABCA] to-transparent" />
+            
+            {/* PATTERN BACKGROUND */}
+            <div className="absolute inset-0 opacity-5" 
+              style={{
+                backgroundImage: `linear-gradient(#05ABCA 1px, transparent 1px), linear-gradient(90deg, #05ABCA 1px, transparent 1px)`,
+                backgroundSize: '30px 30px'
+              }}
+            />
+            
+            <div className="relative z-10 p-10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#05ABCA] to-[#1C75BC] flex items-center justify-center">
+                  <FiTarget className="text-white" size={20} />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-white">Central de Estrategias</h3>
+                  <p className="text-xs text-[#05ABCA]/60 uppercase tracking-wider">Control operativo</p>
                 </div>
               </div>
-              {openFaq === i && (
-                <motion.div 
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  className="overflow-hidden"
+              
+              <p className="text-slate-300 text-sm mb-8 max-w-xl leading-relaxed">
+                Supervisa el flujo de trabajo del equipo creativo, revisa el estado de los kits de marca y aprueba presupuestos de pauta digital.
+              </p>
+              
+              <div className="flex flex-wrap gap-4">
+                <button 
+                  onClick={() => window.location.href='/dashboard/proyectos'} 
+                  className="bg-gradient-to-r from-[#05ABCA] to-[#1C75BC] hover:shadow-lg hover:shadow-[#05ABCA]/30 text-white px-6 py-3.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center gap-2"
                 >
-                  <p className="text-slate-500 text-sm mt-4 leading-relaxed font-medium pl-5">
-                    {item.a}
-                  </p>
-                </motion.div>
-              )}
+                  <FiZap size={16} />
+                  Nuevo Proyecto
+                  <FiArrowUpRight size={14} />
+                </button>
+                <button 
+                  onClick={() => window.location.href='/dashboard/clientes'} 
+                  className="bg-white/10 hover:bg-white/20 border border-white/20 text-white px-6 py-3.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all"
+                >
+                  Ver Clientes
+                </button>
+                <button 
+                  onClick={() => window.location.href='/dashboard/facturacion'} 
+                  className="bg-white/10 hover:bg-white/20 border border-white/20 text-white px-6 py-3.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all"
+                >
+                  Facturación
+                </button>
+              </div>
             </div>
-          ))}
-        </div>
-      </section>
+            
+            {/* CÍRCULO DECORATIVO */}
+            <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-[#05ABCA]/10 rounded-full blur-3xl" />
+          </motion.div>
 
-    </motion.div>
+          {/* ACTIVIDAD RECIENTE */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="relative bg-gradient-to-br from-[#0d2640]/80 to-[#0A1F33]/80 backdrop-blur-xl rounded-2xl border border-[#05ABCA]/20 overflow-hidden"
+          >
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#05ABCA]/50 to-transparent" />
+            
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#05ABCA]/20 to-[#1C75BC]/20 border border-[#05ABCA]/30 flex items-center justify-center">
+                  <FiActivity className="text-[#05ABCA]" size={18} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Actividad Reciente</h3>
+                  <p className="text-xs text-[#05ABCA]/60">Últimas acciones del sistema</p>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                {recentActivity.map((activity, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.6 + (index * 0.1) }}
+                    className="flex items-center gap-4 p-4 bg-[#0A1F33]/40 border border-[#05ABCA]/10 rounded-xl hover:border-[#05ABCA]/30 transition-all"
+                  >
+                    <div className={`w-2 h-2 rounded-full ${
+                      activity.type === 'project' ? 'bg-blue-500' :
+                      activity.type === 'invoice' ? 'bg-emerald-500' :
+                      'bg-amber-500'
+                    }`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-white truncate">{activity.action}</p>
+                      <p className="text-xs text-slate-400 truncate">{activity.client}</p>
+                    </div>
+                    <span className="text-xs text-slate-500 whitespace-nowrap">{activity.time}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* SIDEBAR DERECHO */}
+        <div className="space-y-8">
+          
+          {/* KPI TRACKER */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="relative bg-gradient-to-br from-[#0d2640]/80 to-[#0A1F33]/80 backdrop-blur-xl rounded-2xl border border-[#05ABCA]/20 overflow-hidden"
+          >
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#05ABCA]/50 to-transparent" />
+            
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#05ABCA] to-[#1C75BC] flex items-center justify-center">
+                  <FiBarChart2 className="text-white" size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">Objetivos del Mes</h3>
+                  <p className="text-xs text-[#05ABCA]/60">Progreso general</p>
+                </div>
+              </div>
+              
+              <div className="space-y-6">
+                <div>
+                  <div className="flex justify-between text-xs font-semibold mb-3">
+                    <span className="text-slate-400 uppercase tracking-wider">Entregables</span>
+                    <span className="text-[#05ABCA]">80%</span>
+                  </div>
+                  <div className="h-3 bg-[#0A1F33]/50 border border-[#05ABCA]/20 rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: '80%' }}
+                      transition={{ duration: 1, delay: 0.8 }}
+                      className="h-full bg-gradient-to-r from-[#05ABCA] to-[#1C75BC] rounded-full"
+                    />
+                  </div>
+                </div>
+                
+                <div className="pt-4 space-y-4 border-t border-[#05ABCA]/10">
+                  <div className="flex items-center gap-3">
+                    <FiCheckCircle className="text-emerald-500 flex-shrink-0" size={18} />
+                    <span className="text-xs font-medium text-slate-300">Landing Pages completas</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <FiCheckCircle className="text-emerald-500 flex-shrink-0" size={18} />
+                    <span className="text-xs font-medium text-slate-300">Auditorías SEO realizadas</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-[18px] h-[18px] rounded-full border-2 border-[#05ABCA]/30 flex-shrink-0" />
+                    <span className="text-xs font-medium text-slate-500">Campañas de Meta Ads</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* QUICK STATS */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 }}
+            className="relative bg-gradient-to-br from-[#0d2640]/80 to-[#0A1F33]/80 backdrop-blur-xl rounded-2xl border border-[#05ABCA]/20 overflow-hidden"
+          >
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#05ABCA]/50 to-transparent" />
+            
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/20 border border-amber-500/30 flex items-center justify-center">
+                  <FiAward className="text-amber-500" size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">Performance</h3>
+                  <p className="text-xs text-[#05ABCA]/60">Esta semana</p>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-[#0A1F33]/40 border border-[#05ABCA]/10 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <FiDollarSign className="text-emerald-500" size={16} />
+                    <span className="text-xs text-slate-300 font-medium">Ingresos</span>
+                  </div>
+                  <span className="text-sm font-bold text-white">$45.2M</span>
+                </div>
+                
+                <div className="flex items-center justify-between p-3 bg-[#0A1F33]/40 border border-[#05ABCA]/10 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <FiTrendingUp className="text-blue-500" size={16} />
+                    <span className="text-xs text-slate-300 font-medium">Conversión</span>
+                  </div>
+                  <span className="text-sm font-bold text-white">18.5%</span>
+                </div>
+                
+                <div className="flex items-center justify-between p-3 bg-[#0A1F33]/40 border border-[#05ABCA]/10 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <FiUsers className="text-[#05ABCA]" size={16} />
+                    <span className="text-xs text-slate-300 font-medium">Nuevos Leads</span>
+                  </div>
+                  <span className="text-sm font-bold text-white">342</span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </div>
   );
 }

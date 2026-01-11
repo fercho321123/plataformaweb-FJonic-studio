@@ -3,6 +3,20 @@
 import React, { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  FiMessageSquare,
+  FiSend,
+  FiCheck,
+  FiAlertCircle,
+  FiClock,
+  FiUser,
+  FiMail,
+  FiFileText,
+  FiSearch,
+  FiFilter,
+  FiCheckCircle
+} from 'react-icons/fi';
 
 export default function SoportePage() {
   const { usuario } = useAuth();
@@ -14,9 +28,8 @@ export default function SoportePage() {
   const [ticketSeleccionado, setTicketSeleccionado] = useState<any>(null);
   const [mensajeRespuesta, setMensajeRespuesta] = useState('');
   const [enviando, setEnviando] = useState(false);
-  
-  // Estado para la animación de éxito
   const [mostrandoExito, setMostrandoExito] = useState(false);
+  const [busqueda, setBusqueda] = useState('');
 
   const [formCliente, setFormCliente] = useState({
     usuarioNombre: usuario?.nombre || '',
@@ -53,14 +66,14 @@ export default function SoportePage() {
         setMostrandoExito(false);
         setModalAbierto(false);
         setTickets(prev => prev.filter(t => t.id !== ticketSeleccionado.id));
+        setMensajeRespuesta('');
       }, 2000);
     } finally {
       setEnviando(false);
     }
   };
 
-  const enviarTicketCliente = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const enviarTicketCliente = async () => {
     setEnviando(true);
     try {
       await apiFetch('/soporte', {
@@ -69,149 +82,337 @@ export default function SoportePage() {
       });
       setMostrandoExito(true);
       setFormCliente({ ...formCliente, asunto: '', mensaje: '' });
-      // Después de 3 segundos, permitimos enviar otro si desea
       setTimeout(() => setMostrandoExito(false), 4000);
     } finally {
       setEnviando(false);
     }
   };
 
-  // --- VISTA ADMINISTRADOR ---
+  const ticketsFiltrados = tickets.filter(t => 
+    t.usuarioNombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+    t.titulo.toLowerCase().includes(busqueda.toLowerCase()) ||
+    t.mensaje.toLowerCase().includes(busqueda.toLowerCase())
+  );
+
+  // VISTA ADMINISTRADOR
   if (esAdmin) {
     return (
-      <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
-        <header className="flex justify-between items-end">
-          <div>
-            <h1 className="text-4xl font-black text-[#0A1F33] tracking-tighter">CENTRO DE GESTIÓN</h1>
-            <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-1">Soporte Técnico Especializado</p>
-          </div>
-          <div className="bg-slate-100 px-6 py-2 rounded-2xl">
-            <span className="text-[10px] font-black text-slate-500 uppercase">Tickets Pendientes: {tickets.length}</span>
-          </div>
-        </header>
-
-        <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
-          <table className="w-full text-left border-collapse">
-            <thead className="bg-[#0A1F33] text-white">
-              <tr>
-                <th className="p-8 text-[10px] font-black uppercase tracking-[0.2em]">Detalles del Requerimiento</th>
-                <th className="p-8 text-right text-[10px] font-black uppercase tracking-[0.2em]">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {tickets.map((t: any) => (
-                <tr key={t.id} className="hover:bg-slate-50/80 transition-all">
-                  <td className="p-8">
-                    <div className="flex flex-col gap-3">
-                      <div className="flex items-center gap-3">
-                        <span className="bg-[#05ABCA] text-white text-[9px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg shadow-[#05ABCA]/20">
-                          {t.usuarioNombre}
-                        </span>
-                        <h3 className="font-black text-lg text-[#0A1F33]">{t.titulo}</h3>
-                      </div>
-                      <p className="text-slate-500 text-sm leading-relaxed max-w-2xl font-medium italic">"{t.mensaje}"</p>
+      <div className="min-h-screen relative">
+        <div className="max-w-[1600px] mx-auto px-6 py-10 space-y-8">
+          
+          {/* HEADER */}
+          <header className="mb-12">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-1 h-12 bg-gradient-to-b from-[#05ABCA] to-[#1C75BC] rounded-full" />
+                <div>
+                  <h1 className="text-4xl font-bold text-white mb-1 tracking-tight">
+                    Centro de Soporte
+                  </h1>
+                  <p className="text-[#05ABCA]/60 text-sm font-medium">
+                    Gestión de tickets y atención al cliente
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <div className="bg-gradient-to-br from-[#0d2640]/80 to-[#0A1F33]/80 backdrop-blur-xl border border-[#05ABCA]/20 rounded-xl px-6 py-3">
+                  <div className="flex items-center gap-3">
+                    <FiAlertCircle className="text-amber-500" size={18} />
+                    <div>
+                      <p className="text-xs text-slate-400">Tickets Pendientes</p>
+                      <p className="text-xl font-bold text-white">{tickets.length}</p>
                     </div>
-                  </td>
-                  <td className="p-8 text-right">
-                    <button 
-                      onClick={() => { setTicketSeleccionado(t); setModalAbierto(true); }}
-                      className="bg-[#0A1F33] text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#05ABCA] hover:-translate-y-1 transition-all duration-300 shadow-xl active:scale-95"
-                    >
-                      Responder Ahora
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="h-px bg-gradient-to-r from-[#05ABCA]/50 via-[#05ABCA]/20 to-transparent" />
+          </header>
+
+          {/* BUSCADOR */}
+          <div className="relative max-w-md">
+            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input
+              type="text"
+              placeholder="Buscar tickets..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              className="w-full bg-[#0A1F33]/50 border border-[#05ABCA]/20 rounded-xl pl-12 pr-4 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-[#05ABCA] transition-all"
+            />
+          </div>
+
+          {/* TABLA DE TICKETS */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative bg-gradient-to-br from-[#0d2640]/80 to-[#0A1F33]/80 backdrop-blur-xl rounded-2xl border border-[#05ABCA]/20 overflow-hidden"
+          >
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#05ABCA]/50 to-transparent" />
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="border-b border-[#05ABCA]/10">
+                  <tr className="text-left">
+                    <th className="px-6 py-4 font-semibold text-[#05ABCA] uppercase tracking-wider text-xs">
+                      Usuario
+                    </th>
+                    <th className="px-6 py-4 font-semibold text-[#05ABCA] uppercase tracking-wider text-xs">
+                      Asunto
+                    </th>
+                    <th className="px-6 py-4 font-semibold text-[#05ABCA] uppercase tracking-wider text-xs">
+                      Mensaje
+                    </th>
+                    <th className="px-6 py-4 font-semibold text-[#05ABCA] uppercase tracking-wider text-xs text-center">
+                      Acción
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <AnimatePresence>
+                    {ticketsFiltrados.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-6 py-20 text-center">
+                          <div className="flex flex-col items-center gap-3">
+                            <div className="w-16 h-16 rounded-xl bg-[#05ABCA]/10 border border-[#05ABCA]/20 flex items-center justify-center">
+                              <FiMessageSquare className="text-[#05ABCA]" size={24} />
+                            </div>
+                            <p className="text-slate-400 font-medium">
+                              {busqueda ? 'No se encontraron tickets' : 'No hay tickets pendientes'}
+                            </p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      ticketsFiltrados.map((t: any, index) => (
+                        <motion.tr
+                          key={t.id}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 20 }}
+                          transition={{ delay: index * 0.05 }}
+                          className="border-b border-[#05ABCA]/5 hover:bg-[#05ABCA]/5 transition-colors"
+                        >
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#05ABCA] to-[#1C75BC] flex items-center justify-center text-white font-bold shadow-lg shadow-[#05ABCA]/30">
+                                {t.usuarioNombre?.charAt(0) || 'U'}
+                              </div>
+                              <span className="text-sm font-semibold text-white">{t.usuarioNombre}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <p className="text-sm font-bold text-white">{t.titulo}</p>
+                          </td>
+                          <td className="px-6 py-4">
+                            <p className="text-sm text-slate-300 line-clamp-2 max-w-md">"{t.mensaje}"</p>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <button
+                              onClick={() => { setTicketSeleccionado(t); setModalAbierto(true); }}
+                              className="inline-flex items-center gap-2 bg-gradient-to-r from-[#05ABCA] to-[#1C75BC] text-white px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider hover:shadow-lg hover:shadow-[#05ABCA]/30 transition-all"
+                            >
+                              <FiSend size={14} />
+                              Responder
+                            </button>
+                          </td>
+                        </motion.tr>
+                      ))
+                    )}
+                  </AnimatePresence>
+                </tbody>
+              </table>
+            </div>
+          </motion.div>
         </div>
 
-        {/* MODAL ADMIN CON ANIMACIÓN DE ÉXITO */}
-        {modalAbierto && (
-          <div className="fixed inset-0 bg-[#0A1F33]/80 backdrop-blur-md flex items-center justify-center z-50 p-6">
-            <div className="bg-white w-full max-w-xl rounded-[3rem] p-12 shadow-2xl animate-in zoom-in duration-300 overflow-hidden relative">
-              {mostrandoExito ? (
-                <div className="py-10 text-center animate-in zoom-in duration-500">
-                   <div className="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" />
-                    </svg>
+        {/* MODAL ADMIN */}
+        <AnimatePresence>
+          {modalAbierto && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-6"
+              onClick={() => !mostrandoExito && setModalAbierto(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 20 }}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-gradient-to-br from-[#0d2640] to-[#0A1F33] w-full max-w-2xl rounded-2xl border border-[#05ABCA]/20 overflow-hidden relative"
+              >
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#05ABCA] to-transparent" />
+                
+                {mostrandoExito ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="p-16 text-center"
+                  >
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.2, type: "spring" }}
+                      className="w-24 h-24 bg-emerald-500/20 border-2 border-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6"
+                    >
+                      <FiCheck className="text-emerald-500" size={48} />
+                    </motion.div>
+                    <h2 className="text-3xl font-bold text-white mb-3">¡Solución Enviada!</h2>
+                    <p className="text-slate-400">El ticket ha sido marcado como resuelto</p>
+                  </motion.div>
+                ) : (
+                  <div className="p-8">
+                    <div className="mb-6">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#05ABCA] to-[#1C75BC] flex items-center justify-center">
+                          <FiMessageSquare className="text-white" size={18} />
+                        </div>
+                        <div>
+                          <p className="text-xs text-[#05ABCA] uppercase tracking-wider font-semibold">Respuesta a ticket</p>
+                          <h2 className="text-xl font-bold text-white">{ticketSeleccionado?.usuarioNombre}</h2>
+                        </div>
+                      </div>
+                      <div className="mt-4 p-4 bg-[#0A1F33]/50 border border-[#05ABCA]/10 rounded-xl">
+                        <p className="text-xs text-[#05ABCA] font-semibold mb-1">Asunto:</p>
+                        <p className="text-sm text-white font-medium mb-3">{ticketSeleccionado?.titulo}</p>
+                        <p className="text-xs text-[#05ABCA] font-semibold mb-1">Mensaje:</p>
+                        <p className="text-sm text-slate-300 italic">"{ticketSeleccionado?.mensaje}"</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2 mb-6">
+                      <label className="text-xs font-semibold text-[#05ABCA] uppercase tracking-wider">
+                        Solución
+                      </label>
+                      <textarea
+                        rows={6}
+                        className="w-full bg-[#0A1F33]/50 border border-[#05ABCA]/20 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-[#05ABCA] focus:bg-[#0A1F33]/80 transition-all resize-none"
+                        placeholder="Escribe la solución detallada..."
+                        value={mensajeRespuesta}
+                        onChange={(e) => setMensajeRespuesta(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setModalAbierto(false)}
+                        className="flex-1 bg-[#0A1F33]/50 border border-[#05ABCA]/20 text-slate-400 py-3 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-[#0A1F33] hover:text-white transition-all"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={enviarSolucionFinal}
+                        disabled={enviando || !mensajeRespuesta.trim()}
+                        className="flex-1 bg-gradient-to-r from-[#05ABCA] to-[#1C75BC] text-white py-3 rounded-xl text-xs font-bold uppercase tracking-wider hover:shadow-lg hover:shadow-[#05ABCA]/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        {enviando ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            Enviando...
+                          </>
+                        ) : (
+                          <>
+                            <FiCheckCircle size={16} />
+                            Confirmar Solución
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
-                  <h2 className="text-2xl font-black text-[#0A1F33] uppercase">¡Solución Enviada!</h2>
-                  <p className="text-slate-400 font-bold mt-2">El ticket ha sido marcado como resuelto.</p>
-                </div>
-              ) : (
-                <>
-                  <span className="text-[#05ABCA] font-black text-[10px] uppercase tracking-widest">Resolución de Ticket</span>
-                  <h2 className="text-3xl font-black text-[#0A1F33] mb-8 mt-2">Enviar Solución a {ticketSeleccionado?.usuarioNombre}</h2>
-                  <textarea 
-                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-[2rem] p-8 text-sm font-medium focus:border-[#05ABCA] focus:ring-0 outline-none min-h-[200px] transition-all"
-                    placeholder="Escribe las instrucciones detalladas..."
-                    value={mensajeRespuesta}
-                    onChange={(e) => setMensajeRespuesta(e.target.value)}
-                  />
-                  <div className="flex gap-4 mt-10">
-                    <button onClick={() => setModalAbierto(false)} className="flex-1 bg-slate-100 text-slate-500 py-5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all">Cancelar</button>
-                    <button onClick={enviarSolucionFinal} disabled={enviando} className="flex-1 bg-[#05ABCA] text-white py-5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-[#05ABCA]/30 hover:scale-105 transition-all">
-                      {enviando ? 'Enviando...' : 'Confirmar Solución'}
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        )}
+                )}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     );
   }
 
-  // --- VISTA CLIENTE ---
+  // VISTA CLIENTE
   return (
-    <div className="min-h-screen bg-slate-50/50 py-16 px-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="max-w-3xl mx-auto">
-        <header className="mb-12 text-center">
-          <div className="inline-block bg-[#05ABCA]/10 text-[#05ABCA] px-6 py-2 rounded-full mb-4">
-            <span className="font-black uppercase tracking-[0.3em] text-[10px]">FJONIC HELP CENTER</span>
+    <div className="min-h-screen relative flex items-center justify-center py-20 px-6">
+      <div className="max-w-3xl w-full">
+        
+        {/* HEADER CLIENTE */}
+        <motion.header
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-12 text-center"
+        >
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-[#05ABCA]/10 to-[#1C75BC]/10 border border-[#05ABCA]/30 text-[#05ABCA] px-6 py-2 rounded-full mb-6">
+            <FiMessageSquare size={16} />
+            <span className="font-bold uppercase tracking-wider text-xs">FJONIC Help Center</span>
           </div>
-          <h1 className="text-5xl font-black text-[#0A1F33] tracking-tighter mb-4">¿En qué podemos apoyarte hoy?</h1>
-          <p className="text-slate-400 font-medium text-lg">Nuestro equipo técnico está listo para asistirte.</p>
-        </header>
+          <h1 className="text-5xl font-bold text-white mb-4 tracking-tight">
+            ¿En qué podemos ayudarte?
+          </h1>
+          <p className="text-slate-400 text-lg">
+            Nuestro equipo está listo para asistirte
+          </p>
+        </motion.header>
 
-        <div className="bg-white rounded-[4rem] shadow-2xl shadow-slate-200 border border-slate-100 overflow-hidden">
+        {/* FORMULARIO CLIENTE */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="relative bg-gradient-to-br from-[#0d2640]/80 to-[#0A1F33]/80 backdrop-blur-xl rounded-3xl border border-[#05ABCA]/20 overflow-hidden"
+        >
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-px bg-gradient-to-r from-transparent via-[#05ABCA] to-transparent" />
+          
           {mostrandoExito ? (
-            <div className="p-20 text-center animate-in fade-in zoom-in duration-700">
-              <div className="w-24 h-24 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-8 shadow-lg shadow-green-100">
-                <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h2 className="text-4xl font-black text-[#0A1F33] mb-4">¡Ticket Recibido!</h2>
-              <p className="text-slate-400 font-bold text-lg max-w-md mx-auto leading-relaxed">
-                Hemos recibido tu solicitud. Te notificaremos en la campana de tu perfil cuando tengamos una respuesta.
-              </p>
-              <button 
-                onClick={() => setMostrandoExito(false)}
-                className="mt-10 text-[10px] font-black text-[#05ABCA] uppercase tracking-widest hover:underline"
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="p-20 text-center"
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring" }}
+                className="w-24 h-24 bg-emerald-500/20 border-2 border-emerald-500 rounded-full flex items-center justify-center mx-auto mb-8"
               >
-                Enviar otro requerimiento
+                <FiCheck className="text-emerald-500" size={48} />
+              </motion.div>
+              <h2 className="text-4xl font-bold text-white mb-4">¡Ticket Recibido!</h2>
+              <p className="text-slate-400 text-lg max-w-md mx-auto leading-relaxed mb-8">
+                Hemos recibido tu solicitud. Te notificaremos cuando tengamos una respuesta.
+              </p>
+              <button
+                onClick={() => setMostrandoExito(false)}
+                className="text-sm font-bold text-[#05ABCA] uppercase tracking-wider hover:underline"
+              >
+                Enviar otro ticket
               </button>
-            </div>
+            </motion.div>
           ) : (
-            <form onSubmit={enviarTicketCliente} className="p-12 md:p-16 space-y-10">
-              <div className="grid md:grid-cols-2 gap-8">
-                <div className="space-y-3">
-                  <label className="text-[11px] font-black text-[#0A1F33] uppercase tracking-widest ml-6">Tu Identificación</label>
-                  <input 
-                    className="w-full bg-slate-50 border-2 border-slate-50 rounded-[1.5rem] px-8 py-5 text-sm font-bold text-slate-700 focus:bg-white focus:border-[#05ABCA] outline-none transition-all"
+            <div className="p-8 md:p-12 space-y-6">
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* NOMBRE */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-[#05ABCA] uppercase tracking-wider flex items-center gap-2">
+                    <FiUser size={12} />
+                    Tu Nombre
+                  </label>
+                  <input
+                    className="w-full bg-[#0A1F33]/50 border border-[#05ABCA]/20 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-[#05ABCA] focus:bg-[#0A1F33]/80 transition-all"
                     value={formCliente.usuarioNombre}
                     onChange={(e) => setFormCliente({...formCliente, usuarioNombre: e.target.value})}
                     required
                   />
                 </div>
-                <div className="space-y-3">
-                  <label className="text-[11px] font-black text-[#0A1F33] uppercase tracking-widest ml-6">Motivo de Consulta</label>
-                  <input 
-                    className="w-full bg-slate-50 border-2 border-slate-50 rounded-[1.5rem] px-8 py-5 text-sm font-bold text-slate-700 focus:bg-white focus:border-[#05ABCA] outline-none transition-all"
+
+                {/* ASUNTO */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-[#05ABCA] uppercase tracking-wider flex items-center gap-2">
+                    <FiFileText size={12} />
+                    Asunto
+                  </label>
+                  <input
+                    className="w-full bg-[#0A1F33]/50 border border-[#05ABCA]/20 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-[#05ABCA] focus:bg-[#0A1F33]/80 transition-all"
                     value={formCliente.asunto}
                     onChange={(e) => setFormCliente({...formCliente, asunto: e.target.value})}
                     placeholder="Ej: Acceso a servicios"
@@ -220,11 +421,15 @@ export default function SoportePage() {
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <label className="text-[11px] font-black text-[#0A1F33] uppercase tracking-widest ml-6">Detalles del Problema</label>
-                <textarea 
+              {/* MENSAJE */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-[#05ABCA] uppercase tracking-wider flex items-center gap-2">
+                  <FiMessageSquare size={12} />
+                  Detalles del Problema
+                </label>
+                <textarea
                   rows={6}
-                  className="w-full bg-slate-50 border-2 border-slate-50 rounded-[2rem] px-8 py-8 text-sm font-bold text-slate-700 focus:bg-white focus:border-[#05ABCA] outline-none transition-all"
+                  className="w-full bg-[#0A1F33]/50 border border-[#05ABCA]/20 rounded-xl px-4 py-4 text-sm text-white placeholder-slate-500 outline-none focus:border-[#05ABCA] focus:bg-[#0A1F33]/80 transition-all resize-none"
                   value={formCliente.mensaje}
                   onChange={(e) => setFormCliente({...formCliente, mensaje: e.target.value})}
                   placeholder="Explícanos tu situación..."
@@ -232,18 +437,33 @@ export default function SoportePage() {
                 />
               </div>
 
-              <button 
+              {/* BOTÓN */}
+              <button
+                type="button"
+                onClick={enviarTicketCliente}
                 disabled={enviando}
-                className="w-full bg-[#0A1F33] text-white py-6 rounded-[2rem] text-[12px] font-black uppercase tracking-[0.2em] hover:bg-[#05ABCA] hover:scale-[1.02] active:scale-95 transition-all duration-300 shadow-2xl shadow-[#0A1F33]/20"
+                className="w-full bg-gradient-to-r from-[#05ABCA] to-[#1C75BC] text-white py-4 rounded-xl text-sm font-bold uppercase tracking-widest hover:shadow-lg hover:shadow-[#05ABCA]/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {enviando ? 'Procesando Envío...' : 'Enviar Solicitud de Soporte'}
+                {enviando ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <FiSend size={16} />
+                    Enviar Ticket de Soporte
+                  </>
+                )}
               </button>
-            </form>
+            </div>
           )}
-        </div>
+        </motion.div>
 
-        <footer className="mt-12 text-center">
-          <p className="text-slate-300 text-[10px] font-black uppercase tracking-widest">Atención profesional FJONIC STUDIO</p>
+        <footer className="mt-8 text-center">
+          <p className="text-slate-500 text-xs uppercase tracking-widest">
+            Atención profesional FJONIC STUDIO
+          </p>
         </footer>
       </div>
     </div>
