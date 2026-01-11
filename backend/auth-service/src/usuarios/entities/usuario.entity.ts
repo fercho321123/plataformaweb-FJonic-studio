@@ -1,17 +1,4 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from 'typeorm';
-
-// Definición de roles para la plataforma FJONIC
-export enum RolUsuario {
-  ADMIN = 'admin',
-  STAFF = 'staff',
-  CLIENTE = 'cliente',
-}
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
 
 @Entity('usuarios')
 export class Usuario {
@@ -24,23 +11,22 @@ export class Usuario {
   @Column({ unique: true })
   email: string;
 
-  @Column()
+  @Column({ select: false }) // Por seguridad no enviamos la clave en los select
   password: string;
 
-  // ✅ Gestión de roles para permisos de acceso
-  @Column({
-    type: 'enum',
-    enum: RolUsuario,
-    default: RolUsuario.CLIENTE,
-  })
-  rol: RolUsuario;
+  @Column({ default: 'staff' })
+  rol: string;
+
+  // --- CAMPOS NUEVOS ---
+  @Column({ default: 'Diseñador Creativo' })
+  especialidad: string;
+
+  @Column({ type: 'bigint', default: 0 }) // Usamos bigint para los valores grandes del COP
+  costoHora: number;
 
   @Column({ default: true })
   activo: boolean;
 
-  @CreateDateColumn({ name: 'creado_en' })
-  creadoEn: Date;
-
-  @UpdateDateColumn({ name: 'actualizado_en' })
-  actualizadoEn: Date;
+  @CreateDateColumn()
+  fechaRegistro: Date;
 }

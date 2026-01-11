@@ -1,34 +1,53 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn } from 'typeorm';
 import { Cliente } from '../../clientes/entities/cliente.entity';
-import { OneToMany } from 'typeorm';
 import { Hito } from './hito.entity';
 
-@Entity()
+@Entity('proyectos')
 export class Proyecto {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column()
   nombre: string;
 
-  @OneToMany(() => Hito, (hito) => hito.proyecto)
-hitos: Hito[];
-
-  @Column()
+  // CORRECCIÓN AQUÍ: El tipo 'text' se pasa como primer argumento
+  @Column('text', { nullable: true })
   descripcion: string;
+
+  @Column({ default: 'Marketing Digital' })
+  tipo: string;
+
+  @Column({ default: 'Media' })
+  prioridad: string;
+
+  @Column({ nullable: true })
+  liderProyecto: string;
+
+  @Column({ type: 'date', nullable: true })
+  fechaEntrega: string;
+
+  @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
+  presupuestoTotal: number;
+
+  @Column({ default: 'Pendiente' })
+  estadoPago: string;
 
   @Column({ default: 'pendiente' })
   estado: string;
 
-  @Column({ type: 'date', nullable: true })
+  @CreateDateColumn()
   fechaInicio: Date;
 
   @Column({ type: 'date', nullable: true })
-  fechaFin: Date;
+  fechaFin: string;
 
-@ManyToOne(() => Cliente, (cliente) => cliente.proyectos, {
-  onDelete: 'CASCADE',
-})
-cliente: Cliente;
+  // RELACIONES
+  @ManyToOne(() => Cliente, (cliente) => cliente.proyectos, { onDelete: 'CASCADE' })
+  cliente: Cliente;
+
+  @Column({ nullable: true })
+  clienteId: string;
+
+  @OneToMany(() => Hito, (hito) => hito.proyecto)
+  hitos: Hito[];
 }
-

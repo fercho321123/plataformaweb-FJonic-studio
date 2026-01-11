@@ -32,8 +32,11 @@ export class ProyectosController {
       return await this.proyectosService.findAll();
     }
 
+    // Normalizamos el email del token antes de buscar
+    const emailNormalizado = usuario.email.toLowerCase().trim();
+
     // Si no es admin (es cliente), solo ve sus proyectos vinculados a su email
-    return await this.proyectosService.buscarPorEmail(usuario.email);
+    return await this.proyectosService.buscarPorEmail(emailNormalizado);
   }
 
   // =====================================================
@@ -41,7 +44,9 @@ export class ProyectosController {
   // =====================================================
   @Get('mis-proyectos')
   async obtenerMisProyectos(@Req() req: any) {
-    return await this.proyectosService.buscarPorEmail(req.user.email);
+    // Normalizamos el email que viene del JWT
+    const emailNormalizado = req.user.email.toLowerCase().trim();
+    return await this.proyectosService.buscarPorEmail(emailNormalizado);
   }
 
   // =====================================================
@@ -56,8 +61,11 @@ export class ProyectosController {
 
   @Get('buscar/:email')
   buscarPorEmail(@Param('email') email: string, @Req() req: any) {
-    // Permitir búsqueda por email si es admin
-    return this.proyectosService.buscarPorEmail(email);
+    // Solo permitimos que el admin busque correos arbitrarios
+    if (req.user.rol !== 'admin') throw new UnauthorizedException();
+    
+    const emailNormalizado = email.toLowerCase().trim();
+    return this.proyectosService.buscarPorEmail(emailNormalizado);
   }
 
   // =====================================================
@@ -66,7 +74,6 @@ export class ProyectosController {
 
   @Patch('hitos/:id/completar')
   completarHito(@Param('id') id: string) {
-    // Aquí el servicio ahora enviará la notificación correctamente a la campana
     return this.proyectosService.completarHito(id);
   }
 

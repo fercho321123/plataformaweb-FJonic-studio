@@ -3,13 +3,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClientesService } from './clientes.service';
 import { ClientesController } from './clientes.controller';
 import { Cliente } from './entities/cliente.entity';
-import { Proyecto } from '../proyectos/entities/proyecto.entity'; // 👈 Importa la entidad Proyecto
-import { Notificacion } from '../notificaciones/entities/notificacion.entity'; // 👈 Importa la entidad Notificacion
+import { Proyecto } from '../proyectos/entities/proyecto.entity'; // 👈 Importa la entidad Proyecto// 👈 Importa la entidad Notificacion
 
 @Module({
   imports: [
     // 🟢 CLAVE: Agregamos Proyecto y Notificacion aquí para que el Repositorio esté disponible
-    TypeOrmModule.forFeature([Cliente, Proyecto, Notificacion]), 
+    TypeOrmModule.forFeature([Cliente, Proyecto]), 
   ],
   controllers: [ClientesController],
   providers: [ClientesService],

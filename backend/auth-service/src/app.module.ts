@@ -5,9 +5,6 @@ import { UsuariosModule } from './usuarios/usuarios.module';
 import { AuthModule } from './auth/auth.module';
 import { ClientesModule } from './clientes/clientes.module';
 import { ProyectosModule } from './proyectos/proyectos.module';
-import { ActualizacionesModule } from './actualizaciones/actualizaciones.module';
-import { ComentariosModule } from './comentarios/comentarios.module';
-import { NotificacionesModule } from './notificaciones/notificaciones.module';
 import { FacturacionModule } from './facturacion/facturacion.module';
 import { SoporteModule } from './soporte/soporte.module';
 @Module({
@@ -33,11 +30,6 @@ import { SoporteModule } from './soporte/soporte.module';
     ClientesModule,
 
     ProyectosModule,
-
-    ActualizacionesModule,
-    
-    ComentariosModule,
-    NotificacionesModule,
     FacturacionModule,
     SoporteModule,
   ],

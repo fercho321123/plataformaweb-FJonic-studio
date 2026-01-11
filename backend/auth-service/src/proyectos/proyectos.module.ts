@@ -5,12 +5,10 @@ import { ProyectosController } from './proyectos.controller';
 import { Proyecto } from './entities/proyecto.entity';
 import { Cliente } from '../clientes/entities/cliente.entity';
 import { Hito } from './entities/hito.entity';
-import { NotificacionesModule } from '../notificaciones/notificaciones.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Proyecto, Cliente, Hito]),
-    NotificacionesModule, // ⬅️ AQUÍ
+    TypeOrmModule.forFeature([Proyecto, Cliente, Hito]),// ⬅️ AQUÍ
   ],
   providers: [ProyectosService],
   controllers: [ProyectosController],

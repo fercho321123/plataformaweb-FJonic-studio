@@ -2,15 +2,12 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SoporteService } from './soporte.service';
 import { SoporteController } from './soporte.controller';
-import { Usuario } from '../usuarios/entities/usuario.entity';
-import { Notificacion } from '../notificaciones/entities/notificacion.entity'; // 👈 Importa la entidad
-import { NotificacionesModule } from '../notificaciones/notificaciones.module';
+import { Usuario } from '../usuarios/entities/usuario.entity'; // Importamos la entidad
 
 @Module({
   imports: [
-    // 🔔 AQUÍ ESTÁ LA CLAVE: Debes registrar ambas entidades para este módulo
-    TypeOrmModule.forFeature([Usuario, Notificacion]), 
-    NotificacionesModule,
+    // Registramos la entidad Usuario para que el Service pueda usar el Repository
+    TypeOrmModule.forFeature([Usuario]) 
   ],
   controllers: [SoporteController],
   providers: [SoporteService],

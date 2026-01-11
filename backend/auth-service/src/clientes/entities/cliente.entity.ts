@@ -1,14 +1,5 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  OneToMany,
-  OneToOne,
-  JoinColumn,
-  CreateDateColumn,
-} from 'typeorm';
-import { Proyecto } from '../../proyectos/entities/proyecto.entity';
-import { Usuario } from '../../usuarios/entities/usuario.entity';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from 'typeorm';
+import { Proyecto } from '../../proyectos/entities/proyecto.entity'; // Asegúrate de que la ruta sea correcta
 
 @Entity('clientes')
 export class Cliente {
@@ -22,22 +13,31 @@ export class Cliente {
   email: string;
 
   @Column()
-  telefono: string;
-
-  @Column()
   empresa: string;
 
-  // ✅ NUEVA COLUMNA DE ESTADO
+  @Column({ nullable: true })
+  telefono: string;
+
+  @Column({ nullable: true })
+  sitioWeb: string;
+
+  @Column({ nullable: true })
+  instagram: string;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  presupuesto: number;
+
+  @Column({ default: 'Ventas' })
+  objetivo: string;
+
   @Column({ default: true })
   activo: boolean;
 
-  @OneToOne(() => Usuario, { eager: true })
-  @JoinColumn()
-  usuario: Usuario;
-
-  @OneToMany(() => Proyecto, (proyecto) => proyecto.cliente)
-  proyectos: Proyecto[];
-
   @CreateDateColumn()
-  creadoEn: Date;
+  fechaRegistro: Date;
+
+  // 🔄 ESTO ES LO QUE FALTA:
+  // Definimos que un Cliente tiene muchos Proyectos
+  @OneToMany(() => Proyecto, (proyecto) => proyecto.cliente)
+  proyectos: Proyecto[]; 
 }

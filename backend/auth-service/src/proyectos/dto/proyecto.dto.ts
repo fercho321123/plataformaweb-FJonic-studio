@@ -1,43 +1,39 @@
-import { 
-  IsNotEmpty, 
-  IsString, 
-  IsDateString, 
-  IsUUID, 
-  IsEnum, 
-  IsOptional 
-} from 'class-validator';
-
-// Definimos los estados para que coincidan con tu lógica de negocio
-export enum EstadoProyecto {
-  PENDIENTE = 'pendiente',
-  INICIADO = 'iniciado',
-  FINALIZADO = 'finalizado',
-}
+import { IsString, IsNotEmpty, IsOptional, IsNumber, IsEnum } from 'class-validator';
 
 export class CreateProyectoDto {
-  @IsNotEmpty({ message: 'El nombre del proyecto es obligatorio' })
   @IsString()
+  @IsNotEmpty()
   nombre: string;
 
-  @IsNotEmpty({ message: 'La descripción es obligatoria' })
   @IsString()
-  descripcion: string;
-
   @IsNotEmpty()
-  @IsEnum(EstadoProyecto, {
-    message: 'El estado debe ser: pendiente, iniciado o finalizado',
-  })
-  estado: string;
-
-  @IsNotEmpty({ message: 'La fecha de inicio es obligatoria' })
-  @IsDateString()
-  fechaInicio: string;
-
-  @IsOptional() // ✅ Permitimos que sea opcional al crear
-  @IsDateString({}, { message: 'La fecha de fin debe tener un formato de fecha válido' })
-  fechaFin?: string;
-
-  @IsNotEmpty({ message: 'Debes seleccionar un cliente' })
-  @IsUUID('4', { message: 'El ID del cliente debe ser un UUID válido' })
   clienteId: string;
+
+  @IsString()
+  @IsOptional()
+  tipo?: string;
+
+  @IsString()
+  @IsOptional()
+  prioridad?: string;
+
+  @IsString()
+  @IsOptional()
+  liderProyecto?: string;
+
+  @IsString()
+  @IsOptional()
+  fechaEntrega?: string;
+
+  @IsNumber()
+  @IsOptional()
+  presupuestoTotal?: number;
+
+  @IsString()
+  @IsOptional()
+  descripcion?: string;
+
+  @IsString()
+  @IsOptional()
+  estadoPago?: string;
 }

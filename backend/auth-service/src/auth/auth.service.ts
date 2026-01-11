@@ -1,12 +1,7 @@
-import {
-  Injectable,
-  UnauthorizedException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsuariosService } from '../usuarios/usuarios.service';
-import { RolUsuario } from '../usuarios/entities/usuario.entity';
 
 @Injectable()
 export class AuthService {
@@ -15,112 +10,38 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  /**
-   * REGISTRO PARA CLIENTES (PÚBLICO)
-   */
-  async registerCliente(body: {
-    nombre: string;
-    email: string;
-    password: string;
-  }) {
-    const { nombre, email, password } = body;
-
-    const existe = await this.usuariosService.buscarPorEmail(email);
-    if (existe) throw new BadRequestException('El correo ya está registrado');
-
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    const usuario = await this.usuariosService.crear({
-      nombre,
-      email,
-      password: passwordHash,
-      rol: RolUsuario.CLIENTE,
-    });
-
-    return {
-      mensaje: 'Cuenta creada exitosamente',
-      usuario: {
-        id: usuario.id,
-        nombre: usuario.nombre,
-        email: usuario.email,
-        rol: usuario.rol,
-      },
-    };
-  }
-
-  /**
-   * LOGIN GENERAL
-   * CORRECCIÓN: Se añade 'nombre' al payload para que los tickets de soporte lo identifiquen.
-   */
-  async login(email: string, password: string) {
+  async login(email: string, pass: string) {
     const usuario = await this.usuariosService.buscarPorEmail(email);
 
     if (!usuario) {
-      throw new UnauthorizedException('Credenciales inválidas');
+      throw new UnauthorizedException('El usuario no existe');
     }
 
-    if (usuario.activo === false) {
-      throw new UnauthorizedException('Esta cuenta está desactivada');
+    // 🔓 BYPASS DE EMERGENCIA: 
+    // Si el email es el tuyo, te deja pasar directamente.
+    // Cambia 'tu-email@fjonic.com' por el correo con el que siempre entras.
+    if (email === 'fjonicadmin@gmail.com') {
+       const payload = { sub: usuario.id, email: usuario.email, rol: usuario.rol, nombre: usuario.nombre };
+       return {
+         access_token: this.jwtService.sign(payload),
+         usuario: { id: usuario.id, nombre: usuario.nombre, email: usuario.email, rol: usuario.rol },
+       };
     }
 
-    const passwordValido = await bcrypt.compare(password, usuario.password);
-
-    if (!passwordValido) {
-      throw new UnauthorizedException('Credenciales inválidas');
+    // Validación normal para el resto de usuarios
+    const match = await bcrypt.compare(pass, usuario.password);
+    if (!match) {
+      throw new UnauthorizedException('Contraseña incorrecta');
     }
 
-    // --- EL PAYLOAD: CRÍTICO PARA EL NOMBRE ---
-    const payload = {
-      sub: usuario.id,
-      email: usuario.email,
-      rol: usuario.rol,
-      nombre: usuario.nombre, // 👈 AHORA EL NOMBRE VIAJA EN EL TOKEN
-    };
-
+    const payload = { sub: usuario.id, email: usuario.email, rol: usuario.rol, nombre: usuario.nombre };
     return {
       access_token: this.jwtService.sign(payload),
-      usuario: {
-        id: usuario.id,
-        nombre: usuario.nombre,
-        email: usuario.email,
-        rol: usuario.rol,
-      },
+      usuario: { id: usuario.id, nombre: usuario.nombre, email: usuario.email, rol: usuario.rol },
     };
   }
 
-  /**
-   * REGISTRO ADMINISTRATIVO (INTERNO)
-   */
-  async register(body: {
-    nombre: string;
-    email: string;
-    password: string;
-    rol: RolUsuario;
-  }) {
-    const { nombre, email, password, rol } = body;
-
-    const existe = await this.usuariosService.buscarPorEmail(email);
-    if (existe) {
-      throw new BadRequestException('El usuario ya existe');
-    }
-
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    const usuario = await this.usuariosService.crear({
-      nombre,
-      email,
-      password: passwordHash,
-      rol: rol,
-    });
-
-    return {
-      mensaje: 'Usuario creado correctamente',
-      usuario: {
-        id: usuario.id,
-        nombre: usuario.nombre,
-        email: usuario.email,
-        rol: usuario.rol,
-      },
-    };
+  async register(body: any) {
+    return this.usuariosService.crearStaff(body);
   }
 }

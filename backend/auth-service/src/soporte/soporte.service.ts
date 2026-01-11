@@ -1,93 +1,45 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Notificacion } from '../notificaciones/entities/notificacion.entity';
-import { NotificacionesService } from '../notificaciones/notificaciones.service';
-import { Usuario, RolUsuario } from '../usuarios/entities/usuario.entity'; 
+// Eliminadas las importaciones de Notificaciones
+import { Usuario } from '../usuarios/entities/usuario.entity'; 
 
 @Injectable()
 export class SoporteService {
   constructor(
-    @InjectRepository(Notificacion)
-    private readonly notificacionRepo: Repository<Notificacion>,
-    
+    // ⚠️ ATENCIÓN: Si borraste la entidad Notificacion, 
+    // este servicio dará error hasta que crees una entidad 'Ticket'.
+    // Por ahora, he dejado solo la lógica de Usuario.
     @InjectRepository(Usuario)
     private readonly usuarioRepo: Repository<Usuario>,
-
-    private readonly notificacionesService: NotificacionesService,
   ) {}
 
   // 1. EL CLIENTE CREA EL TICKET
   async crearTicket(data: { usuarioId: string; usuarioNombre: string; asunto: string; mensaje: string }) {
     
-    // A. CREAR EL REGISTRO PARA LA GESTIÓN (Tipo: soporte)
-    const ticketParaAdmin = this.notificacionRepo.create({
-      usuarioId: data.usuarioId.toString(),
-      usuarioNombre: data.usuarioNombre,
-      titulo: data.asunto,
-      mensaje: data.mensaje,
-      tipo: 'soporte', 
-      leida: false,
-    });
-    const ticketGuardado = await this.notificacionRepo.save(ticketParaAdmin);
+    // Aquí deberías tener una entidad 'Ticket'. 
+    // Como borraste 'Notificacion', este método solo imprimirá en consola 
+    // hasta que definas una nueva tabla de Soporte.
+    
+    console.log(`Ticket Recibido de ${data.usuarioNombre}: ${data.asunto}`);
 
-    // B. NOTIFICAR A LA CAMPANA DEL ADMIN (Tipo: notificacion)
-    try {
-      // 🟢 USANDO EL ENUM CORRECTO: RolUsuario.ADMIN
-      const admins = await this.usuarioRepo.find({ 
-        where: { rol: RolUsuario.ADMIN } 
-      });
-      
-      for (const admin of admins) {
-        await this.notificacionesService.crea(
-          admin.id.toString(),
-          '¡NUEVO TICKET RECIBIDO! 🚨',
-          `El cliente ${data.usuarioNombre} solicita soporte: "${data.asunto}"`,
-          'notificacion'
-        );
-      }
-    } catch (error) {
-      console.error("Error enviando notificación visual al admin:", error);
-    }
-
-    // C. NOTIFICACIÓN DE CONFIRMACIÓN PARA EL CLIENTE
-    await this.notificacionesService.crea(
-      data.usuarioId,
-      'Ticket Enviado 📩',
-      `Tu ticket "${data.asunto}" ha sido recibido por el equipo técnico.`,
-      'notificacion'
-    );
-
-    return ticketGuardado;
+    return { 
+      success: true, 
+      mensaje: 'Ticket recibido (Lógica de guardado temporalmente desactivada por limpieza de módulos)' 
+    };
   }
 
-  // 2. EL ADMIN OBTIENE LOS TICKETS PENDIENTES
+  // 2. EL ADMIN OBTIENE LOS TICKETS
   async obtenerTicketsAdmin() {
-    return await this.notificacionRepo.find({
-      where: { tipo: 'soporte' },
-      order: { createdAt: 'DESC' },
-    });
+    // Retornamos vacío por ahora para evitar errores de compilación
+    return [];
   }
 
   // 3. EL ADMIN RESPONDE
   async responderTicket(ticketId: string, mensajeRespuesta: string) {
-    const ticket = await this.notificacionRepo.findOne({ 
-      where: { id: parseInt(ticketId), tipo: 'soporte' } 
-    });
+    // Lógica simplificada sin notificaciones
+    console.log(`Respuesta enviada al ticket ${ticketId}: ${mensajeRespuesta}`);
 
-    if (!ticket) throw new NotFoundException('El ticket ya no existe o fue resuelto');
-
-    // Enviamos la respuesta a la campana del cliente
-    await this.notificacionesService.crea(
-      ticket.usuarioId,
-      `Re: ${ticket.titulo}`,
-      mensajeRespuesta,
-      'notificacion'
-    );
-
-    // Borramos el ticket de la lista de gestión del admin
-    await this.notificacionRepo.delete(ticket.id);
-
-    return { success: true };
+    return { success: true, info: 'Respuesta procesada' };
   }
 }
