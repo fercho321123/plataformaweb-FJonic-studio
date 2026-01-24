@@ -39,7 +39,6 @@ export default async (req: any, res: any) => {
   return server(req, res);
 };
 
-// Esto permite que siga funcionando localmente con 'npm run start:dev'
 if (!process.env.VERCEL) {
   bootstrap();
 }
