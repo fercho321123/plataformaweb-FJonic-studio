@@ -10,27 +10,30 @@ import { SoporteModule } from './soporte/soporte.module';
 
 @Module({
   imports: [
-    // Carga las variables de entorno
     ConfigModule.forRoot({ isGlobal: true }),
-
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        // Si existe POSTGRES_URL (Vercel/Neon), la usa. Si no, usa localhost.
-        url: configService.get('POSTGRES_URL') || configService.get('DATABASE_URL'),
-        host: configService.get('POSTGRES_URL') ? undefined : 'localhost',
-        port: 5432,
-        username: configService.get('POSTGRES_URL') ? undefined : 'postgres',
-        password: configService.get('POSTGRES_URL') ? undefined : 'Yao072212',
-        database: configService.get('POSTGRES_URL') ? undefined : 'fjonic_autenticacion',
-        autoLoadEntities: true,
-        synchronize: false, // Mejor mantenerlo en false para evitar pérdida de datos en Neon
-        ssl: configService.get('POSTGRES_URL') ? { rejectUnauthorized: false } : false,
-      }),
+      useFactory: (configService: ConfigService) => {
+        // Priorizamos la URL de Neon que configuraste en Vercel
+        const dbUrl = configService.get('POSTGRES_URL') || configService.get('DATABASE_URL');
+        
+        return {
+          type: 'postgres',
+          url: dbUrl,
+          // Si no hay URL (local), usamos tus datos manuales
+          host: dbUrl ? undefined : 'localhost',
+          port: 5432,
+          username: dbUrl ? undefined : 'postgres',
+          password: dbUrl ? undefined : 'Yao072212',
+          database: dbUrl ? undefined : 'fjonic_autenticacion',
+          autoLoadEntities: true,
+          synchronize: false, 
+          // CRÍTICO: Neon requiere SSL obligatorio en la nube
+          ssl: dbUrl ? { rejectUnauthorized: false } : false,
+        };
+      },
     }),
-
     UsuariosModule,
     AuthModule,
     ClientesModule,
