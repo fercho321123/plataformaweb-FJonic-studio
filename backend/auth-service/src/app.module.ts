@@ -12,25 +12,20 @@ import { ClientesModule } from './clientes/clientes.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        // Intentamos usar la URL completa de Neon o los parámetros por separado
-        host: configService.get<string>('DB_HOST'),
-        port: configService.get<number>('DB_PORT', 5432),
-        username: configService.get<string>('DB_USER'),
-        password: configService.get<string>('DB_PASSWORD'),
-        database: configService.get<string>('DB_NAME'),
-        autoLoadEntities: true,
-        // En Vercel/Producción synchronize debe ser false para no borrar datos
-        synchronize: process.env.NODE_ENV !== 'production', 
-        // Configuración obligatoria para conectar a Neon desde la nube
-        ssl: true,
-        extra: {
+      useFactory: (configService: ConfigService) => {
+        // Vercel usa DATABASE_URL o POSTGRES_URL automáticamente
+        const dbUrl = configService.get<string>('DATABASE_URL') || configService.get<string>('POSTGRES_URL');
+
+        return {
+          type: 'postgres',
+          url: dbUrl, // Usamos la URL completa que ya está en tu Vercel
+          autoLoadEntities: true,
+          synchronize: process.env.NODE_ENV !== 'production',
           ssl: {
-            rejectUnauthorized: false,
+            rejectUnauthorized: false, // Requerido por Neon
           },
-        },
-      }),
+        };
+      },
     }),
     AuthModule,
     UsuariosModule,
