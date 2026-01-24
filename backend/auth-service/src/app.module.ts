@@ -1,12 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { UsuariosModule } from './usuarios/usuarios.module';
-import { AuthModule } from './auth/auth.module';
-import { ClientesModule } from './clientes/clientes.module';
-import { ProyectosModule } from './proyectos/proyectos.module';
-import { FacturacionModule } from './facturacion/facturacion.module';
-import { SoporteModule } from './soporte/soporte.module';
+// ... tus otros imports
 
 @Module({
   imports: [
@@ -15,31 +10,33 @@ import { SoporteModule } from './soporte/soporte.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        // Priorizamos la URL de Neon que configuraste en Vercel
-        const dbUrl = configService.get('POSTGRES_URL') || configService.get('DATABASE_URL');
-        
+        const dbUrl = configService.get<string>('DATABASE_URL') || configService.get<string>('POSTGRES_URL');
+
+        // Si hay URL de Neon, la usamos directamente (esto ignora el host 'base')
+        if (dbUrl) {
+          return {
+            type: 'postgres',
+            url: dbUrl,
+            autoLoadEntities: true,
+            synchronize: false,
+            ssl: { rejectUnauthorized: false }, // Obligatorio para Neon
+          };
+        }
+
+        // Si no hay URL (Localhost), usamos tus datos manuales
         return {
           type: 'postgres',
-          url: dbUrl,
-      
-          host: dbUrl ? undefined : 'localhost',
+          host: 'localhost',
           port: 5432,
-          username: dbUrl ? undefined : 'postgres',
-          password: dbUrl ? undefined : 'Yao072212',
-          database: dbUrl ? undefined : 'fjonic_autenticacion',
+          username: 'postgres',
+          password: 'Yao072212',
+          database: 'fjonic_autenticacion',
           autoLoadEntities: true,
-          synchronize: false, 
-          // CRÍTICO: Neon requiere SSL obligatorio en la nube
-          ssl: dbUrl ? { rejectUnauthorized: false } : false,
+          synchronize: true,
         };
       },
     }),
-    UsuariosModule,
-    AuthModule,
-    ClientesModule,
-    ProyectosModule,
-    FacturacionModule,
-    SoporteModule,
+    // ... tus otros módulos
   ],
 })
 export class AppModule {}
