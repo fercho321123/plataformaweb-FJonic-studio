@@ -4,19 +4,22 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // 🛡️ CORS CORREGIDO: Permite la entrada desde tus dos frontends
+  // 🛡️ CORS ACTUALIZADO PARA PRODUCCIÓN Y LOCAL
   app.enableCors({
     origin: [
-      'http://localhost:3000', // Frontend Público
-      'http://localhost:3002'  // Frontend Privado (Cambiamos el 3001 por el 3002)
+      'http://localhost:3000',      // Local Público
+      'http://localhost:3002',      // Local Privado
+      /\.vercel\.app$/,             // 👈 Esto permite CUALQUIER subdominio de Vercel (muy útil)
     ], 
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
     allowedHeaders: 'Content-Type, Authorization',
   });
 
-  // El backend se queda en el 3001
-  await app.listen(3001);
-  console.log(`🚀 Servidor FJONIC escuchando en puerto 3001`);
+  // 🌍 IMPORTANTE: Vercel asigna el puerto automáticamente mediante process.env.PORT
+  const port = process.env.PORT || 3001;
+  
+  await app.listen(port);
+  console.log(`🚀 Servidor FJONIC corriendo en puerto: ${port}`);
 }
 bootstrap();
