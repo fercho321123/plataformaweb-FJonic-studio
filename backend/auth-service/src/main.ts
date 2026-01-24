@@ -3,9 +3,18 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
+  // Creamos la instancia de la aplicación
   const app = await NestFactory.create(AppModule);
 
-  // 1. INTERCEPTOR MANUAL DE CORS
+  // 1. CONFIGURACIÓN DE CORS NATIVA (Más robusta para Vercel)
+  app.enableCors({
+    origin: 'https://fjonic-admin.vercel.app',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+    allowedHeaders: 'Content-Type, Authorization, Accept, X-Requested-With',
+  });
+
+  // 2. INTERCEPTOR MANUAL (Doble capa de seguridad para peticiones OPTIONS)
   const expressApp = app.getHttpAdapter().getInstance();
   expressApp.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', 'https://fjonic-admin.vercel.app');
@@ -19,18 +28,29 @@ async function bootstrap() {
     next();
   });
 
-  app.useGlobalPipes(new ValidationPipe());
+  // 3. VALIDACIÓN GLOBAL
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+  }));
 
-  await app.init(); // IMPORTANTE: Siempre inicializar para Vercel
+  // IMPORTANTE: Inicializar para Vercel sin levantar el servidor con .listen()
+  await app.init();
   return expressApp;
 }
 
-// Lógica de cache para Serverless
+// Lógica de cache para evitar reconexiones innecesarias en cada petición
 let cachedServer: any;
 
 export default async (req: any, res: any) => {
   if (!cachedServer) {
-    cachedServer = await bootstrap();
+    try {
+      cachedServer = await bootstrap();
+    } catch (err) {
+      console.error('Error inicializando NestJS:', err);
+      return res.status(500).send('Error interno del servidor');
+    }
   }
   return cachedServer(req, res);
 };
