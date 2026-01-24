@@ -21,7 +21,7 @@ import { SoporteModule } from './soporte/soporte.module';
         return {
           type: 'postgres',
           url: dbUrl,
-          // Si no hay URL (local), usamos tus datos manuales
+      
           host: dbUrl ? undefined : 'localhost',
           port: 5432,
           username: dbUrl ? undefined : 'postgres',
