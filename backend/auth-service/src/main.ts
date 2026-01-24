@@ -8,10 +8,11 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'http://localhost:3000',
-      'https://tu-frontend-fjonic.vercel.app',
-      /\.vercel\.app$/,
+      'http://localhost:3002',
+      'https://fjonic-admin.vercel.app', // <--- TU FRONTEND REAL
+      /\.vercel\.app$/,                 // PERMITE OTROS SUBDOMINIOS DE VERCEL
     ],
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
     allowedHeaders: 'Content-Type, Authorization',
   });
