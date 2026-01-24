@@ -16,17 +16,19 @@ async function bootstrap() {
 
   // 2. INTERCEPTOR MANUAL (Doble capa de seguridad para peticiones OPTIONS)
   const expressApp = app.getHttpAdapter().getInstance();
-  expressApp.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', 'https://fjonic-admin.vercel.app');
-    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    
-    if (req.method === 'OPTIONS') {
-      return res.sendStatus(200);
-    }
-    next();
-  });
+  // Dentro de bootstrap(), reemplaza el bloque de expressApp.use:
+expressApp.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'https://fjonic-admin.vercel.app');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  // Respuesta inmediata para el preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  next();
+});
 
   // 3. VALIDACIÓN GLOBAL
   app.useGlobalPipes(new ValidationPipe({
