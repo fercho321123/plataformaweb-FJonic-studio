@@ -5,13 +5,12 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // 🛡️ TU CONFIGURACIÓN DE CORS
   app.enableCors({
     origin: [
-      'http://localhost:3000',      // Local Público
-      'http://localhost:3002',      // Local Privado
-      /\.vercel\.app$/,             // Subdominios de Vercel
-    ], 
+      'http://localhost:3000',
+      'http://localhost:3002',
+      /\.vercel\.app$/,
+    ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
     allowedHeaders: 'Content-Type, Authorization',
@@ -19,26 +18,30 @@ async function bootstrap() {
 
   app.useGlobalPipes(new ValidationPipe());
 
-  // IMPORTANTE: En Vercel usamos .init(), en local usamos .listen()
+  // Si estamos en Vercel, inicializamos y devolvemos la instancia de Express
   if (process.env.VERCEL) {
     await app.init();
     return app.getHttpAdapter().getInstance();
-  } else {
-    const port = process.env.PORT || 3001;
-    await app.listen(port);
-    console.log(`🚀 Servidor FJONIC corriendo en puerto: ${port}`);
   }
+
+  // Si es local, escuchamos en el puerto
+  const port = process.env.PORT || 3001;
+  await app.listen(port);
+  console.log(`🚀 Servidor FJONIC corriendo en puerto: ${port}`);
 }
 
-// Lógica de exportación para Vercel
-let server: any;
+// LÓGICA DE EXPORTACIÓN PARA VERCEL (Corregida)
+let cachedServer: any;
+
 export default async (req: any, res: any) => {
-  if (!server) {
-    server = await bootstrap();
+  if (!cachedServer) {
+    cachedServer = await bootstrap();
   }
-  return server(req, res);
+  // Llamamos a la instancia de Express con los objetos req y res de Node
+  return cachedServer(req, res);
 };
 
+// Solo ejecutar bootstrap() directamente si NO estamos en Vercel
 if (!process.env.VERCEL) {
   bootstrap();
 }
