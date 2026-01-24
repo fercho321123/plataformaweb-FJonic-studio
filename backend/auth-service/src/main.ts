@@ -1,25 +1,45 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // 🛡️ CORS ACTUALIZADO PARA PRODUCCIÓN Y LOCAL
+  // 🛡️ TU CONFIGURACIÓN DE CORS
   app.enableCors({
     origin: [
       'http://localhost:3000',      // Local Público
       'http://localhost:3002',      // Local Privado
-      /\.vercel\.app$/,             // 👈 Esto permite CUALQUIER subdominio de Vercel (muy útil)
+      /\.vercel\.app$/,             // Subdominios de Vercel
     ], 
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
     allowedHeaders: 'Content-Type, Authorization',
   });
 
-  // 🌍 IMPORTANTE: Vercel asigna el puerto automáticamente mediante process.env.PORT
-  const port = process.env.PORT || 3001;
-  
-  await app.listen(port);
-  console.log(`🚀 Servidor FJONIC corriendo en puerto: ${port}`);
+  app.useGlobalPipes(new ValidationPipe());
+
+  // IMPORTANTE: En Vercel usamos .init(), en local usamos .listen()
+  if (process.env.VERCEL) {
+    await app.init();
+    return app.getHttpAdapter().getInstance();
+  } else {
+    const port = process.env.PORT || 3001;
+    await app.listen(port);
+    console.log(`🚀 Servidor FJONIC corriendo en puerto: ${port}`);
+  }
 }
-bootstrap();
+
+// Lógica de exportación para Vercel
+let server: any;
+export default async (req: any, res: any) => {
+  if (!server) {
+    server = await bootstrap();
+  }
+  return server(req, res);
+};
+
+// Esto permite que siga funcionando localmente con 'npm run start:dev'
+if (!process.env.VERCEL) {
+  bootstrap();
+}
