@@ -16,7 +16,8 @@ import { ProyectosService } from './proyectos.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('proyectos')
-//@UseGuards(JwtAuthGuard)
+// Recomendación: Mantén el Guard activo para que req.user se llene correctamente
+@UseGuards(JwtAuthGuard)
 export class ProyectosController {
   constructor(private readonly proyectosService: ProyectosService) {}
 
@@ -27,42 +28,47 @@ export class ProyectosController {
   async findAll(@Req() req: any) {
     const usuario = req.user;
 
-    // Si es admin, ve absolutamente todo con progreso
+    // Validación de seguridad para evitar el Error 500
+    if (!usuario) {
+      throw new UnauthorizedException('Token inválido o no proporcionado');
+    }
+
+    // Si es admin, ve absolutamente todo
     if (usuario.rol === 'admin') {
       return await this.proyectosService.findAll();
     }
 
-    // Normalizamos el email del token antes de buscar
+    // Si es cliente, solo sus proyectos
     const emailNormalizado = usuario.email.toLowerCase().trim();
-
-    // Si no es admin (es cliente), solo ve sus proyectos vinculados a su email
     return await this.proyectosService.buscarPorEmail(emailNormalizado);
   }
 
   // =====================================================
-  // 👉 RUTA ESPECÍFICA PARA EL CLIENTE (POR SEGURIDAD)
+  // 👉 RUTA ESPECÍFICA PARA EL CLIENTE
   // =====================================================
   @Get('mis-proyectos')
   async obtenerMisProyectos(@Req() req: any) {
-    // Normalizamos el email que viene del JWT
+    if (!req.user) throw new UnauthorizedException();
+    
     const emailNormalizado = req.user.email.toLowerCase().trim();
     return await this.proyectosService.buscarPorEmail(emailNormalizado);
   }
 
   // =====================================================
-  // 👉 RUTAS ADMINISTRATIVAS
+  // 👉 RUTAS ADMINISTRATIVAS (Protegidas por ROL)
   // =====================================================
   
   @Post()
   crear(@Body() data: any, @Req() req: any) {
-    if (req.user.rol !== 'admin') throw new UnauthorizedException('Solo administradores');
+    if (!req.user || req.user.rol !== 'admin') {
+      throw new UnauthorizedException('Solo administradores pueden crear proyectos');
+    }
     return this.proyectosService.crear(data);
   }
 
   @Get('buscar/:email')
   buscarPorEmail(@Param('email') email: string, @Req() req: any) {
-    // Solo permitimos que el admin busque correos arbitrarios
-    if (req.user.rol !== 'admin') throw new UnauthorizedException();
+    if (!req.user || req.user.rol !== 'admin') throw new UnauthorizedException();
     
     const emailNormalizado = email.toLowerCase().trim();
     return this.proyectosService.buscarPorEmail(emailNormalizado);
@@ -84,8 +90,7 @@ export class ProyectosController {
 
   @Get(':id/progreso')
   async obtenerProgreso(@Param('id', ParseIntPipe) id: number) {
-    const progreso = await this.proyectosService.calcularProgresoProyecto(id);
-    return { proyectoId: id, progreso };
+    return await this.proyectosService.calcularProgresoProyecto(id);
   }
 
   @Get(':id')
@@ -103,13 +108,13 @@ export class ProyectosController {
     @Body() data: any,
     @Req() req: any
   ) {
-    if (req.user.rol !== 'admin') throw new UnauthorizedException();
+    if (!req.user || req.user.rol !== 'admin') throw new UnauthorizedException();
     return this.proyectosService.actualizar(id, data);
   }
 
   @Delete(':id')
   eliminar(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
-    if (req.user.rol !== 'admin') throw new UnauthorizedException();
+    if (!req.user || req.user.rol !== 'admin') throw new UnauthorizedException();
     return this.proyectosService.eliminar(id);
   }
 }
