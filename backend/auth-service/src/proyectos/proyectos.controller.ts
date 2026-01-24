@@ -16,7 +16,7 @@ import { ProyectosService } from './proyectos.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('proyectos')
-@UseGuards(JwtAuthGuard)
+//@UseGuards(JwtAuthGuard)
 export class ProyectosController {
   constructor(private readonly proyectosService: ProyectosService) {}
 
