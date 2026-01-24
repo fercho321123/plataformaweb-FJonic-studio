@@ -1,7 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-// ... tus otros imports
+import { AuthModule } from './auth/auth.module';
+import { UsuariosModule } from './usuarios/usuarios.module';
+import { ProyectosModule } from './proyectos/proyectos.module';
+import { ClientesModule } from './clientes/clientes.module';
 
 @Module({
   imports: [
@@ -12,31 +15,32 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       useFactory: (configService: ConfigService) => {
         const dbUrl = configService.get<string>('DATABASE_URL') || configService.get<string>('POSTGRES_URL');
 
-        // Si hay URL de Neon, la usamos directamente (esto ignora el host 'base')
         if (dbUrl) {
           return {
             type: 'postgres',
             url: dbUrl,
             autoLoadEntities: true,
-            synchronize: false,
-            ssl: { rejectUnauthorized: false }, // Obligatorio para Neon
+            synchronize: false, // En producción siempre false
+            ssl: { rejectUnauthorized: false },
           };
         }
 
-        // Si no hay URL (Localhost), usamos tus datos manuales
         return {
           type: 'postgres',
           host: 'localhost',
           port: 5432,
           username: 'postgres',
-          password: 'Yao072212',
+          password: 'tu_password_local',
           database: 'fjonic_autenticacion',
           autoLoadEntities: true,
           synchronize: true,
         };
       },
     }),
-    // ... tus otros módulos
+    AuthModule,
+    UsuariosModule,
+    ProyectosModule,
+    ClientesModule,
   ],
 })
 export class AppModule {}
