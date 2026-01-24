@@ -32,13 +32,11 @@ async function bootstrap() {
 }
 
 let cachedServer: any;
+// ... (todo el código anterior de bootstrap)
+
 export default async (req: any, res: any) => {
   if (!cachedServer) {
     cachedServer = await bootstrap();
   }
   return cachedServer(req, res);
 };
-
-if (!process.env.VERCEL) {
-  bootstrap();
-}
