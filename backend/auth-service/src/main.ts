@@ -5,12 +5,12 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-// En tu main.ts, dentro de bootstrap()
+// En backend/auth-service/src/main.ts
 app.enableCors({
-  origin: 'https://fjonic-admin.vercel.app', // Tu dominio de admin
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  origin: 'https://fjonic-admin.vercel.app', // Asegúrate que no tenga un / al final
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  allowedHeaders: 'Content-Type, Authorization, Accept',
 });
   app.useGlobalPipes(new ValidationPipe());
 
