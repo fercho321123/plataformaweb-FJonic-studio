@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactCompiler: true,
+  // Esto le dice a Next.js que no se detenga por errores de TypeScript o Lint
   typescript: {
     ignoreBuildErrors: true,
   },
