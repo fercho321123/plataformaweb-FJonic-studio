@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react'; // 1. Agregado useEffect
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { apiFetch } from '@/lib/api'; // Asegúrate de que esta ruta sea correcta
 import { motion } from 'framer-motion';
 import { FiMail, FiLock, FiArrowRight } from 'react-icons/fi';
-import Image from 'next/image';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,9 +15,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [mounted, setMounted] = useState(false); // 2. Estado para control de hidratación
+  const [mounted, setMounted] = useState(false);
 
-  // 3. Efecto para confirmar que el cliente está listo
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -28,31 +27,24 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
-        }
-      );
+      // 🚀 Usando la función blindada contra CORS
+      const data = await apiFetch('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Credenciales incorrectas');
-      }
-
-      const data = await res.json();
+      // Si llegamos aquí, apiFetch ya validó la respuesta
       login(data.access_token, data.usuario);
       router.push('/dashboard');
+      
     } catch (err: any) {
-      setError(err.message || 'Error al conectar con el servidor');
+      // El error message viene formateado desde apiFetch
+      setError(err.message || 'Error de conexión con FJonic API');
     } finally {
       setLoading(false);
     }
   };
 
-  // 4. Evita el renderizado hasta que el cliente esté montado
   if (!mounted) {
     return <div className="min-h-screen bg-[#0A1F33]" />;
   }
@@ -60,7 +52,7 @@ export default function LoginPage() {
   return (
     <div 
       className="fixed inset-0 bg-gradient-to-br from-[#0A1F33] via-[#0d2640] to-[#0A1F33] overflow-hidden flex items-center justify-center p-6"
-      suppressHydrationWarning // 5. Atributo de seguridad para atributos dinámicos
+      suppressHydrationWarning
     >
       
       {/* GRID ANIMADO DE FONDO */}
@@ -85,7 +77,6 @@ export default function LoginPage() {
         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 1 }}
       />
 
-      {/* CONTENEDOR PRINCIPAL */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -98,7 +89,6 @@ export default function LoginPage() {
           
           <div className="p-8">
             
-            {/* LOGO FJONIC STUDIO ACTUALIZADO */}
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
@@ -120,7 +110,6 @@ export default function LoginPage() {
               </p>
             </motion.div>
 
-            {/* ERROR MESSAGE */}
             {error && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
@@ -131,9 +120,7 @@ export default function LoginPage() {
               </motion.div>
             )}
 
-            {/* FORMULARIO */}
             <form onSubmit={handleSubmit} className="space-y-5">
-              
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-[#05ABCA] uppercase tracking-wider flex items-center gap-2">
                   <FiMail size={12} />
@@ -191,9 +178,10 @@ export default function LoginPage() {
 
             <div className="mt-8 pt-6 border-t border-[#05ABCA]/10 text-center">
               <p className="text-sm text-slate-400">
-                ¿No tienes cuenta?{' '}
+                ¿Problemas de acceso?{' '}
                 <button
-                  onClick={() => router.push('/register')}
+                  type="button"
+                  onClick={() => router.push('/soporte')}
                   className="text-[#05ABCA] font-bold hover:underline"
                 >
                   Contactar Soporte
