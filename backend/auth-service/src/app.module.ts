@@ -19,7 +19,7 @@ import { SoporteModule } from './soporte/soporte.module';
         type: 'postgres',
         url: configService.get<string>('DATABASE_URL') || configService.get<string>('POSTGRES_URL'),
         autoLoadEntities: true,
-        synchronize: true, // Esto creará las tablas de Facturación y Soporte en Neon automáticamente
+        synchronize: true, 
         ssl: {
           rejectUnauthorized: false,
         },
@@ -29,7 +29,7 @@ import { SoporteModule } from './soporte/soporte.module';
     UsuariosModule,
     ProyectosModule,
     ClientesModule,
-    // 👇 REGÍSTRALOS AQUÍ TAMBIÉN
+    
     FacturacionModule,
     SoporteModule,
   ],
