@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString, IsNumber, Min } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, IsNumber, MinLength } from 'class-validator';
 
 export class CrearUsuarioDto {
   @IsString()
@@ -10,7 +10,7 @@ export class CrearUsuarioDto {
 
   @IsString()
   @IsNotEmpty()
-  @Min(6) // Opcional: mínimo de caracteres para la clave
+  @MinLength(6, { message: 'La contraseña debe tener al menos 6 caracteres' }) // ✅ Corregido
   password: string;
 
   // --- NUEVOS CAMPOS PARA FJONIC STUDIO ---

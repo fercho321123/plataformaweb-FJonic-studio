@@ -175,19 +175,6 @@ export default function LoginPage() {
                 )}
               </button>
             </form>
-
-            <div className="mt-8 pt-6 border-t border-[#05ABCA]/10 text-center">
-              <p className="text-sm text-slate-400">
-                ¿Problemas de acceso?{' '}
-                <button
-                  type="button"
-                  onClick={() => router.push('/soporte')}
-                  className="text-[#05ABCA] font-bold hover:underline"
-                >
-                  Contactar Soporte
-                </button>
-              </p>
-            </div>
           </div>
         </div>
       </motion.div>

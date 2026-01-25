@@ -5,6 +5,9 @@ import { AuthModule } from './auth/auth.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { ProyectosModule } from './proyectos/proyectos.module';
 import { ClientesModule } from './clientes/clientes.module';
+// 👇 IMPORTA LOS MÓDULOS QUE FALTAN
+import { FacturacionModule } from './facturacion/facturacion.module'; 
+import { SoporteModule } from './soporte/soporte.module'; 
 
 @Module({
   imports: [
@@ -14,12 +17,11 @@ import { ClientesModule } from './clientes/clientes.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
-        // Vercel inyecta estas automáticamente
         url: configService.get<string>('DATABASE_URL') || configService.get<string>('POSTGRES_URL'),
         autoLoadEntities: true,
-        synchronize: false, 
+        synchronize: true, // Esto creará las tablas de Facturación y Soporte en Neon automáticamente
         ssl: {
-          rejectUnauthorized: false, // Obligatorio para Neon
+          rejectUnauthorized: false,
         },
       }),
     }),
@@ -27,6 +29,9 @@ import { ClientesModule } from './clientes/clientes.module';
     UsuariosModule,
     ProyectosModule,
     ClientesModule,
+    // 👇 REGÍSTRALOS AQUÍ TAMBIÉN
+    FacturacionModule,
+    SoporteModule,
   ],
 })
 export class AppModule {}
