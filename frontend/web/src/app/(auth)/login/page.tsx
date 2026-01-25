@@ -27,18 +27,17 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // 🚀 Usando la función blindada contra CORS
       const data = await apiFetch('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       });
 
-      // Si llegamos aquí, apiFetch ya validó la respuesta
+
       login(data.access_token, data.usuario);
       router.push('/dashboard');
       
     } catch (err: any) {
-      // El error message viene formateado desde apiFetch
+
       setError(err.message || 'Error de conexión con FJonic API');
     } finally {
       setLoading(false);
