@@ -5,9 +5,13 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // 1. CORS: Simplificado para asegurar conexión local
+  // 1. CORS: Dinámico para Local y Producción
   app.enableCors({
-    origin: true, // En local, esto es lo más seguro para evitar el "Failed to fetch"
+    origin: [
+      'https://fjonic-admin.vercel.app', // Tu URL de producción
+      'http://localhost:3000',
+      'http://127.0.0.1:3000'
+    ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
     allowedHeaders: 'Content-Type, Authorization, Accept, X-Requested-With',
@@ -20,29 +24,32 @@ async function bootstrap() {
     transform: true,
   }));
 
-  // 3. ARRANCAR
+  // 3. LÓGICA DE ARRANQUE
   if (process.env.NODE_ENV !== 'production') {
     const port = process.env.PORT || 3001;
-    // IMPORTANTE: Asegúrate de que no haya nada más corriendo en el 3001
     await app.listen(port);
-    console.log(`\n🍔 FJonic Backend ACTIVADO`);
-    console.log(`🚀 Corriendo en: http://localhost:${port}`);
+    console.log(`\n🍔 FJonic Backend ACTIVADO en http://localhost:${port}`);
   } else {
+    // IMPORTANTE: En Vercel solo inicializamos, no escuchamos puerto
     await app.init();
     return app.getHttpAdapter().getInstance();
   }
 }
 
-// Export para Vercel
+// 🚀 Lógica específica para exportar a Vercel
 let cachedServer: any;
-export default async (req: any, res: any) => {
+
+const handler = async (req: any, res: any) => {
   if (!cachedServer) {
     cachedServer = await bootstrap();
   }
+  // En producción (Vercel), cachedServer ya es la instancia de Express/Fastify
   return cachedServer(req, res);
 };
 
-// Solo para ejecución local
-if (require.main === module || process.env.NODE_ENV !== 'production') {
+export default handler;
+
+// Solo ejecutamos bootstrap directamente si estamos en local
+if (process.env.NODE_ENV !== 'production') {
   bootstrap();
 }
