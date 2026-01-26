@@ -6,7 +6,7 @@ import {
   Delete,
   Param,
   Body,
-  ParseIntPipe,
+  // Quitamos ParseIntPipe de aquí si no se usa en ningún lado
   Patch,
   Req,
   UseGuards,
@@ -16,36 +16,25 @@ import { ProyectosService } from './proyectos.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('proyectos')
-// Recomendación: Mantén el Guard activo para que req.user se llene correctamente
 @UseGuards(JwtAuthGuard)
 export class ProyectosController {
   constructor(private readonly proyectosService: ProyectosService) {}
 
-  // =====================================================
-  // 👉 LISTA PRINCIPAL (ADMIN O CLIENTE)
-  // =====================================================
   @Get()
   async findAll(@Req() req: any) {
     const usuario = req.user;
-
-    // Validación de seguridad para evitar el Error 500
     if (!usuario) {
       throw new UnauthorizedException('Token inválido o no proporcionado');
     }
 
-    // Si es admin, ve absolutamente todo
     if (usuario.rol === 'admin') {
       return await this.proyectosService.findAll();
     }
 
-    // Si es cliente, solo sus proyectos
     const emailNormalizado = usuario.email.toLowerCase().trim();
     return await this.proyectosService.buscarPorEmail(emailNormalizado);
   }
 
-  // =====================================================
-  // 👉 RUTA ESPECÍFICA PARA EL CLIENTE
-  // =====================================================
   @Get('mis-proyectos')
   async obtenerMisProyectos(@Req() req: any) {
     if (!req.user) throw new UnauthorizedException();
@@ -54,10 +43,6 @@ export class ProyectosController {
     return await this.proyectosService.buscarPorEmail(emailNormalizado);
   }
 
-  // =====================================================
-  // 👉 RUTAS ADMINISTRATIVAS (Protegidas por ROL)
-  // =====================================================
-  
   @Post()
   crear(@Body() data: any, @Req() req: any) {
     if (!req.user || req.user.rol !== 'admin') {
@@ -74,10 +59,6 @@ export class ProyectosController {
     return this.proyectosService.buscarPorEmail(emailNormalizado);
   }
 
-  // =====================================================
-  // 👉 GESTIÓN DE HITOS Y PROGRESO
-  // =====================================================
-
   @Patch('hitos/:id/completar')
   completarHito(@Param('id') id: string) {
     return this.proyectosService.completarHito(id);
@@ -88,23 +69,22 @@ export class ProyectosController {
     return this.proyectosService.toggleHito(id);
   }
 
+  // 👉 CORREGIDO: Eliminado ParseIntPipe
   @Get(':id/progreso')
-  async obtenerProgreso(@Param('id', ParseIntPipe) id: number) {
+  async obtenerProgreso(@Param('id') id: string) {
     return await this.proyectosService.calcularProgresoProyecto(id);
   }
 
+  // 👉 CORREGIDO: Eliminado ParseIntPipe
   @Get(':id')
-  obtenerProyectoConProgreso(@Param('id', ParseIntPipe) id: number) {
+  obtenerProyectoConProgreso(@Param('id') id: string) {
     return this.proyectosService.obtenerProyectoConProgreso(id);
   }
 
-  // =====================================================
-  // 👉 ACTUALIZACIÓN Y ELIMINACIÓN
-  // =====================================================
-
+  // 👉 CORREGIDO: Eliminado ParseIntPipe
   @Patch(':id')
   actualizar(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() data: any,
     @Req() req: any
   ) {
@@ -112,8 +92,9 @@ export class ProyectosController {
     return this.proyectosService.actualizar(id, data);
   }
 
+  // 👉 CORREGIDO: Eliminado ParseIntPipe
   @Delete(':id')
-  eliminar(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+  eliminar(@Param('id') id: string, @Req() req: any) {
     if (!req.user || req.user.rol !== 'admin') throw new UnauthorizedException();
     return this.proyectosService.eliminar(id);
   }
