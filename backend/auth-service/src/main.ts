@@ -5,7 +5,7 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // 1. CORS: Simplificado (Vercel ya maneja los headers en vercel.json)
+  // 1. CORS
   app.enableCors({
     origin: [
       'https://fjonic-admin.vercel.app',
@@ -15,17 +15,19 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // 2. VALIDACIÓN GLOBAL
+  // 2. VALIDACIÓN GLOBAL (Ajustada para UUIDs)
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     forbidNonWhitelisted: true,
-    transform: true,
+    // Se cambia a false para evitar que intente transformar el UUID en un número
+    transform: false, 
   }));
 
   // 3. LÓGICA DE ARRANQUE
   if (process.env.NODE_ENV === 'production') {
     await app.init();
-    return app.getHttpAdapter().getInstance(); // Retorna la instancia de Express
+    // Importante para Vercel: retornamos la instancia de express
+    return app.getHttpAdapter().getInstance(); 
   } else {
     const port = process.env.PORT || 3001;
     await app.listen(port);

@@ -92,9 +92,13 @@ export class ProyectosController {
     return this.proyectosService.actualizar(id, data);
   }
 
-  // 👉 CORREGIDO: Eliminado ParseIntPipe
   @Delete(':id')
-  eliminar(@Param('id') id: string, @Req() req: any) {
+  // Usamos @Param('id') solo, asegurándonos de que no haya NADA más en la línea
+  eliminar(@Param('id') id: any, @Req() req: any) { 
+    // Este log es vital. Si no lo ves en la consola de Vercel al fallar,
+    // es que la petición ni siquiera entró al controlador.
+    console.log("Intentando eliminar ID:", id); 
+    
     if (!req.user || req.user.rol !== 'admin') throw new UnauthorizedException();
     return this.proyectosService.eliminar(id);
   }
