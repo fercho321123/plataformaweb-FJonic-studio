@@ -138,7 +138,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <div className="space-y-1">
                     <NavItem href="/dashboard/admin/finanzas" icon={FiDollarSign} label="Finanzas Global" color="amber" />
                     <NavItem href="/dashboard/admin/usuarios" icon={FiUserPlus} label="Gestión Staff" color="amber" />
-                    <NavItem href="/dashboard/soporte" icon={FiLifeBuoy} label="Centro Soporte" color="amber" />
                   </div>
                 </section>
               )}
