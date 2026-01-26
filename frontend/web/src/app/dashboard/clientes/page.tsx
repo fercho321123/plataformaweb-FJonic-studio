@@ -9,7 +9,6 @@ import {
   FiTrash2, 
   FiGlobe, 
   FiDollarSign, 
-  FiTarget, 
   FiInstagram,
   FiBriefcase,
   FiCheck,
@@ -141,6 +140,7 @@ export default function PaginaClientes() {
                 </div>
 
                 <form onSubmit={manejarEnvio} className="space-y-6">
+                  {/* NOMBRE */}
                   <div className="space-y-2 group">
                     <label className="text-[10px] font-black text-slate-500 uppercase ml-2 tracking-widest group-focus-within:text-[#05ABCA] transition-colors">Nombre de Enlace</label>
                     <div className="relative">
@@ -149,8 +149,18 @@ export default function PaginaClientes() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase ml-2 tracking-widest">Identidad Corporativa</label>
+                  {/* EMAIL - RESTAURADO */}
+                  <div className="space-y-2 group">
+                    <label className="text-[10px] font-black text-slate-500 uppercase ml-2 tracking-widest group-focus-within:text-[#05ABCA] transition-colors">Correo Electrónico</label>
+                    <div className="relative">
+                      <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" />
+                      <input type="email" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white focus:border-[#05ABCA]/50 outline-none transition-all" placeholder="cliente@empresa.com" value={datosFormulario.email} onChange={(e) => setDatosFormulario({...datosFormulario, email: e.target.value})} required />
+                    </div>
+                  </div>
+
+                  {/* EMPRESA */}
+                  <div className="space-y-2 group">
+                    <label className="text-[10px] font-black text-slate-500 uppercase ml-2 tracking-widest group-focus-within:text-[#05ABCA] transition-colors">Identidad Corporativa</label>
                     <div className="relative">
                       <FiBriefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" />
                       <input className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white focus:border-[#05ABCA]/50 outline-none transition-all" placeholder="Nombre de la marca" value={datosFormulario.empresa} onChange={(e) => setDatosFormulario({...datosFormulario, empresa: e.target.value})} required />
@@ -218,7 +228,6 @@ export default function PaginaClientes() {
                       className="group relative bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 hover:border-[#05ABCA]/30 rounded-[2.5rem] p-8 transition-all duration-500"
                     >
                       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-                        {/* Avatar y Datos Base */}
                         <div className="flex items-center gap-6 flex-1">
                           <div className="w-20 h-20 rounded-[1.5rem] bg-gradient-to-br from-[#05ABCA] to-[#1C75BC] text-white flex items-center justify-center font-black text-3xl shadow-2xl group-hover:scale-105 transition-transform italic">
                             {c.empresa?.charAt(0) || 'C'}
@@ -233,7 +242,6 @@ export default function PaginaClientes() {
                           </div>
                         </div>
 
-                        {/* Stats en Grid */}
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-8 lg:border-l lg:border-white/5 lg:pl-10">
                           <div>
                             <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1">Estrategia</p>
@@ -249,12 +257,12 @@ export default function PaginaClientes() {
                           </div>
                           <div className="col-span-2 md:col-span-1 flex items-center justify-end lg:justify-start gap-3">
                             {c.sitioWeb && (
-                              <a href={`https://${c.sitioWeb}`} target="_blank" className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-slate-400 hover:text-[#05ABCA] hover:bg-[#05ABCA]/10 transition-all border border-transparent hover:border-[#05ABCA]/20">
+                              <a href={`https://${c.sitioWeb}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-slate-400 hover:text-[#05ABCA] hover:bg-[#05ABCA]/10 transition-all border border-transparent hover:border-[#05ABCA]/20">
                                 <FiGlobe size={16} />
                               </a>
                             )}
                             {c.instagram && (
-                              <a href={`https://instagram.com/${c.instagram.replace('@','')}`} target="_blank" className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-slate-400 hover:text-pink-400 hover:bg-pink-500/10 transition-all border border-transparent hover:border-pink-500/20">
+                              <a href={`https://instagram.com/${c.instagram.replace('@','')}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-slate-400 hover:text-pink-400 hover:bg-pink-500/10 transition-all border border-transparent hover:border-pink-500/20">
                                 <FiInstagram size={16} />
                               </a>
                             )}
@@ -264,8 +272,6 @@ export default function PaginaClientes() {
                           </div>
                         </div>
                       </div>
-                      
-                      {/* Barra decorativa inferior */}
                       <div className="absolute bottom-0 left-10 right-10 h-[1px] bg-gradient-to-r from-transparent via-[#05ABCA]/10 to-transparent" />
                     </motion.div>
                   );
@@ -273,18 +279,13 @@ export default function PaginaClientes() {
               </AnimatePresence>
             </div>
 
-            {/* EMPTY STATE */}
             {clientes.length === 0 && !cargando && (
               <div className="text-center py-40 bg-white/[0.01] rounded-[3rem] border-2 border-dashed border-white/5">
-                <div className="relative inline-block mb-6">
-                  <FiBriefcase className="text-white/5" size={80} />
-                  <FiExternalLink className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[#05ABCA]/40" size={30} />
-                </div>
+                <FiBriefcase className="mx-auto text-white/5 mb-6" size={80} />
                 <p className="text-slate-500 font-black uppercase tracking-[0.3em] italic">No hay registros en la base central</p>
               </div>
             )}
 
-            {/* LOADING */}
             {cargando && (
               <div className="text-center py-40">
                 <div className="w-12 h-12 border-2 border-[#05ABCA]/20 border-t-[#05ABCA] rounded-full animate-spin mx-auto mb-4" />
