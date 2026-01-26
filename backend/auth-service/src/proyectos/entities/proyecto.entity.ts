@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn } from 'typeorm';
+import { 
+  Entity, 
+  PrimaryGeneratedColumn, 
+  Column, 
+  ManyToOne, 
+  OneToMany, 
+  CreateDateColumn,
+  JoinColumn 
+} from 'typeorm';
 import { Cliente } from '../../clientes/entities/cliente.entity';
 import { Hito } from './hito.entity';
 
@@ -10,8 +18,7 @@ export class Proyecto {
   @Column()
   nombre: string;
 
-  // CORRECCIÓN AQUÍ: El tipo 'text' se pasa como primer argumento
-  @Column('text', { nullable: true })
+  @Column({ type: 'text', nullable: true })
   descripcion: string;
 
   @Column({ default: 'Marketing Digital' })
@@ -42,10 +49,12 @@ export class Proyecto {
   fechaFin: string;
 
   // RELACIONES
+  // Especificamos explícitamente el nombre de la columna para evitar conflictos
   @ManyToOne(() => Cliente, (cliente) => cliente.proyectos, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'clienteId' })
   cliente: Cliente;
 
-  @Column({ nullable: true })
+  @Column({ type: 'uuid', nullable: true })
   clienteId: string;
 
   @OneToMany(() => Hito, (hito) => hito.proyecto)

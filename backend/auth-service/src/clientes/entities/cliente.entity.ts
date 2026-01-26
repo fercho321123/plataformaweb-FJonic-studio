@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from 'typeorm';
-import { Proyecto } from '../../proyectos/entities/proyecto.entity'; // Asegúrate de que la ruta sea correcta
+import { Proyecto } from '../../proyectos/entities/proyecto.entity';
 
 @Entity('clientes')
 export class Cliente {
@@ -24,7 +24,8 @@ export class Cliente {
   @Column({ nullable: true })
   instagram: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  // Aumentamos precisión para presupuestos grandes en pesos
+  @Column({ type: 'decimal', precision: 15, scale: 2, default: 0 })
   presupuesto: number;
 
   @Column({ default: 'Ventas' })
@@ -36,8 +37,6 @@ export class Cliente {
   @CreateDateColumn()
   fechaRegistro: Date;
 
-  // 🔄 ESTO ES LO QUE FALTA:
-  // Definimos que un Cliente tiene muchos Proyectos
   @OneToMany(() => Proyecto, (proyecto) => proyecto.cliente)
   proyectos: Proyecto[]; 
 }

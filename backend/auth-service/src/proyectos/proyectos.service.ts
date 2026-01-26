@@ -18,24 +18,17 @@ export class ProyectosService {
     private readonly hitoRepo: Repository<Hito>,
   ) {}
 
-  // =====================================================
-  // 👉 BÚSQUEDA POR EMAIL (Para la vista del cliente)
-  // =====================================================
   async buscarPorEmail(email: string) {
     if (!email) return [];
-    
-    const cliente = await this.clienteRepo.findOne({ 
-      where: { email: ILike(email.trim()) } 
-    });
-    
+    const cliente = await this.clienteRepo.findOne({ where: { email: ILike(email.trim()) } });
     if (!cliente) return [];
 
     const proyectos = await this.proyectoRepo.find({
       where: { cliente: { id: cliente.id } },
       relations: ['cliente', 'hitos'],
+      order: { fechaInicio: 'DESC' } // 👈 Ordenamos por fecha, no por ID
     });
 
-    // Mapeamos para incluir el cálculo de progreso
     return await Promise.all(
       proyectos.map(async (p) => ({ 
         ...p, 
@@ -44,9 +37,6 @@ export class ProyectosService {
     );
   }
 
-  // =====================================================
-  // 👉 CREAR PROYECTO
-  // =====================================================
   async crear(data: any): Promise<Proyecto> {
     const cliente = await this.clienteRepo.findOne({ where: { id: data.clienteId } });
     if (!cliente) throw new NotFoundException('Cliente no encontrado');
@@ -64,18 +54,13 @@ export class ProyectosService {
       cliente: cliente,
     });
 
-    const proyectoGuardado = await this.proyectoRepo.save(nuevoProyecto);
-    this.logger.log(`✅ Proyecto creado: ${proyectoGuardado.nombre}`);
-    return proyectoGuardado;
+    return await this.proyectoRepo.save(nuevoProyecto);
   }
 
-  // =====================================================
-  // 👉 LISTAR TODOS (ADMIN)
-  // =====================================================
   async findAll() {
     const proyectos = await this.proyectoRepo.find({ 
       relations: ['cliente', 'hitos'],
-      order: { id: 'DESC' }
+      order: { fechaInicio: 'DESC' } // 👈 Cambiado: ID DESC no funciona bien con UUID
     });
     
     return await Promise.all(
@@ -86,11 +71,6 @@ export class ProyectosService {
     );
   }
 
-  // =====================================================
-  // 👉 GESTIÓN DE PROGRESO Y HITOS
-  // =====================================================
-  
-  // Cambiado 'any' por 'string' para soportar UUID
   async obtenerProyectoConProgreso(id: string) {
     const proyecto = await this.proyectoRepo.findOne({
       where: { id },
@@ -102,12 +82,8 @@ export class ProyectosService {
   }
 
   async calcularProgresoProyecto(proyectoId: string): Promise<number> {
-    const hitos = await this.hitoRepo.find({ 
-      where: { proyecto: { id: proyectoId } } 
-    });
-    
+    const hitos = await this.hitoRepo.find({ where: { proyecto: { id: proyectoId } } });
     if (!hitos || hitos.length === 0) return 0;
-    
     const completados = hitos.filter((h) => h.completado).length;
     return Math.round((completados / hitos.length) * 100);
   }
@@ -123,8 +99,6 @@ export class ProyectosService {
     await this.hitoRepo.save(hito);
 
     const progreso = await this.calcularProgresoProyecto(hito.proyecto.id);
-    
-    // Actualizar estado automático
     hito.proyecto.estado = progreso === 100 ? 'finalizado' : progreso > 0 ? 'iniciado' : 'pendiente';
     await this.proyectoRepo.save(hito.proyecto);
 
@@ -140,37 +114,23 @@ export class ProyectosService {
 
     hito.completado = true;
     await this.hitoRepo.save(hito);
-
     const progreso = await this.calcularProgresoProyecto(hito.proyecto.id);
     return { progreso, estado: hito.proyecto.estado };
   }
 
-  // =====================================================
-  // 👉 ACTUALIZAR Y ELIMINAR
-  // =====================================================
-  
   async actualizar(id: string, data: any) {
     const proyecto = await this.proyectoRepo.findOne({ where: { id } });
     if (!proyecto) throw new NotFoundException('Proyecto no encontrado');
     
     if (data.presupuestoTotal) data.presupuestoTotal = Number(data.presupuestoTotal);
     
-    // Evitamos sobreescribir el ID por error
-    delete data.id; 
-
     Object.assign(proyecto, data);
     return await this.proyectoRepo.save(proyecto);
   }
 
   async eliminar(id: string) {
     const proyecto = await this.proyectoRepo.findOne({ where: { id } });
-    if (!proyecto) {
-      throw new NotFoundException(`Proyecto con ID ${id} no encontrado`);
-    }
-    
-    // Usamos remove en lugar de delete para que se disparen los hooks si existen
-    const borrado = await this.proyectoRepo.remove(proyecto);
-    this.logger.warn(`🗑️ Proyecto eliminado: ${id}`);
-    return borrado;
+    if (!proyecto) throw new NotFoundException('Proyecto no encontrado');
+    return await this.proyectoRepo.remove(proyecto);
   }
 }
