@@ -14,7 +14,6 @@ import {
   FiCheckCircle,
   FiZap,
   FiActivity,
-  FiSearch,
   FiTag,
   FiFileText,
   FiCreditCard
@@ -78,20 +77,25 @@ export default function PaginaProyectos() {
     }
   };
 
-  const eliminarProyecto = async (id: string) => {
+  const eliminarProyecto = async (idOriginal: any) => {
+    // ELIMINACIÓN DE ERROR "numeric string is expected":
+    // Forzamos que el ID sea una cadena de texto plana.
+    const idParaBorrar = String(idOriginal);
+
     if (!confirm('¿Terminar misión? Esta acción es irreversible.')) return;
+    
     try {
-      // Ajuste para asegurar que el ID sea el correcto (id o _id)
-      await apiFetch(`/proyectos/${id}`, { method: 'DELETE' });
-      setProyectos(prev => prev.filter(p => (p.id || p._id) !== id));
+      await apiFetch(`/proyectos/${idParaBorrar}`, { method: 'DELETE' });
+      // Filtramos usando la misma lógica de comparación de strings
+      setProyectos(prev => prev.filter(p => String(p.id || p._id) !== idParaBorrar));
     } catch (err: any) {
-      alert(err.message);
+      alert(`Fallo en purga: ${err.message}`);
     }
   };
 
   const obtenerColorPrioridad = (prioridad: string) => {
     switch(prioridad) {
-      case 'Alta': return 'bg-rose-500/10 border-rose-500/40 text-rose-400';
+      case 'Alta': return 'bg-rose-500/10 border-rose-500/40 text-rose-400 shadow-[0_0_10px_rgba(244,63,94,0.1)]';
       case 'Media': return 'bg-amber-500/10 border-amber-500/40 text-amber-400';
       case 'Baja': return 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400';
       default: return 'bg-slate-500/10 border-slate-500/40 text-slate-400';
@@ -99,12 +103,12 @@ export default function PaginaProyectos() {
   };
 
   const obtenerNombreCliente = (clienteId: string) => {
-    const cliente = clientes.find(c => (c.id || c._id) === clienteId);
-    return cliente?.empresa || 'Sin cliente';
+    const cliente = clientes.find(c => String(c.id || c._id) === String(clienteId));
+    return cliente?.empresa || 'Sin cliente asignado';
   };
 
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-300">
+    <div className="min-h-screen bg-[#020617] text-slate-300 selection:bg-[#05ABCA]/30">
       
       <header className="relative pt-10 pb-10 px-6 max-w-[1600px] mx-auto">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -117,7 +121,7 @@ export default function PaginaProyectos() {
           </div>
 
           <div className="flex gap-4">
-            <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 min-w-[140px]">
+            <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 min-w-[140px] backdrop-blur-md">
               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Activos</p>
               <p className="text-3xl font-black text-[#05ABCA] leading-none">{proyectos.length}</p>
             </div>
@@ -127,31 +131,36 @@ export default function PaginaProyectos() {
 
       <main className="max-w-[1600px] mx-auto px-6 pb-20 grid grid-cols-1 xl:grid-cols-12 gap-8">
         
-        {/* FORMULARIO */}
+        {/* PANEL DE REGISTRO */}
         <aside className="xl:col-span-4">
-          <div className="sticky top-10 bg-white/[0.02] border border-white/5 rounded-[2rem] p-8 backdrop-blur-2xl">
-            <form onSubmit={manejarEnvio} className="space-y-4">
-              
-              {/* Nombre y Cliente */}
-              <div className="space-y-4">
-                <div className="group">
-                  <label className="text-[10px] font-black text-[#05ABCA] uppercase ml-1">Proyecto</label>
-                  <div className="relative">
-                    <FiLayers className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
-                    <input className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:border-[#05ABCA] outline-none" placeholder="Nombre..." value={datosForm.nombre} onChange={(e) => setDatosForm({ ...datosForm, nombre: e.target.value })} required />
-                  </div>
-                </div>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="sticky top-10 bg-white/[0.02] border border-white/5 rounded-[2.5rem] p-8 backdrop-blur-3xl shadow-2xl">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#05ABCA] to-[#1C75BC] flex items-center justify-center shadow-lg shadow-[#05ABCA]/20">
+                <FiPlus className="text-white text-xl" />
+              </div>
+              <div>
+                <h3 className="text-white font-black uppercase tracking-tighter italic">Nueva Misión</h3>
+                <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest">Configurar parámetros</p>
+              </div>
+            </div>
 
-                <div>
-                  <label className="text-[10px] font-black text-[#05ABCA] uppercase ml-1">Cliente</label>
-                  <select className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-sm text-white outline-none focus:border-[#05ABCA]" value={datosForm.clienteId} onChange={(e) => setDatosForm({ ...datosForm, clienteId: e.target.value })} required>
-                    <option value="" className="bg-[#020617]">Seleccionar cliente...</option>
-                    {clientes.map(c => <option key={c.id || c._id} value={c.id || c._id} className="bg-[#020617]">{c.empresa}</option>)}
-                  </select>
+            <form onSubmit={manejarEnvio} className="space-y-5">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-[#05ABCA] uppercase ml-1">Proyecto</label>
+                <div className="relative">
+                  <FiLayers className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+                  <input className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:border-[#05ABCA] outline-none transition-all" placeholder="Ej: Rediseño Web" value={datosForm.nombre} onChange={(e) => setDatosForm({ ...datosForm, nombre: e.target.value })} required />
                 </div>
               </div>
 
-              {/* Tipo y Líder */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-[#05ABCA] uppercase ml-1">Cliente</label>
+                <select className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-sm text-white outline-none focus:border-[#05ABCA]" value={datosForm.clienteId} onChange={(e) => setDatosForm({ ...datosForm, clienteId: e.target.value })} required>
+                  <option value="" className="bg-[#020617]">Seleccionar cliente...</option>
+                  {clientes.map(c => <option key={c.id || c._id} value={c.id || c._id} className="bg-[#020617]">{c.empresa}</option>)}
+                </select>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-[10px] font-black text-[#05ABCA] uppercase ml-1">Tipo</label>
@@ -168,19 +177,17 @@ export default function PaginaProyectos() {
                 </div>
               </div>
 
-              {/* Fecha y Presupuesto */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[10px] font-black text-[#05ABCA] uppercase ml-1">Deadline</label>
+                  <label className="text-[10px] font-black text-[#05ABCA] uppercase ml-1">Entrega</label>
                   <input type="date" className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-sm text-white outline-none focus:border-[#05ABCA]" value={datosForm.fechaEntrega} onChange={(e) => setDatosForm({ ...datosForm, fechaEntrega: e.target.value })} required />
                 </div>
                 <div>
-                  <label className="text-[10px] font-black text-[#05ABCA] uppercase ml-1">Presupuesto</label>
+                  <label className="text-[10px] font-black text-[#05ABCA] uppercase ml-1">Inversión ($)</label>
                   <input type="number" className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-sm text-white outline-none focus:border-[#05ABCA]" placeholder="0" value={datosForm.presupuestoTotal} onChange={(e) => setDatosForm({ ...datosForm, presupuestoTotal: e.target.value })} required />
                 </div>
               </div>
 
-              {/* Estado de Pago y Prioridad */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-[10px] font-black text-[#05ABCA] uppercase ml-1">Pago</label>
@@ -200,52 +207,78 @@ export default function PaginaProyectos() {
                 </div>
               </div>
 
-              {/* Descripción */}
               <div>
                 <label className="text-[10px] font-black text-[#05ABCA] uppercase ml-1">Descripción</label>
-                <textarea className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-sm text-white outline-none focus:border-[#05ABCA] h-20 resize-none" placeholder="Breve descripción..." value={datosForm.descripcion} onChange={(e) => setDatosForm({ ...datosForm, descripcion: e.target.value })} required />
+                <textarea className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-sm text-white outline-none focus:border-[#05ABCA] h-20 resize-none" placeholder="Alcance del proyecto..." value={datosForm.descripcion} onChange={(e) => setDatosForm({ ...datosForm, descripcion: e.target.value })} required />
               </div>
 
-              <button type="submit" className="w-full bg-gradient-to-r from-[#05ABCA] to-[#1C75BC] text-white py-4 rounded-xl font-black text-xs uppercase tracking-widest hover:scale-[1.02] transition-all">
-                <FiZap className="inline mr-2" /> Inicializar Proyecto
+              <button type="submit" className="w-full bg-gradient-to-r from-[#05ABCA] to-[#1C75BC] text-white py-4 rounded-xl font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-[#05ABCA]/20 hover:scale-[1.02] transition-all">
+                <FiZap className="inline mr-2" /> Desplegar Proyecto
               </button>
-              {error && <p className="text-rose-400 text-[10px] text-center font-bold uppercase">{error}</p>}
+              {error && <p className="text-rose-400 text-[10px] text-center font-bold uppercase tracking-widest">{error}</p>}
             </form>
-          </div>
+          </motion.div>
         </aside>
 
-        {/* LISTADO */}
+        {/* LISTADO DE PROYECTOS */}
         <section className="xl:col-span-8 space-y-4">
           <div className="grid gap-4">
             <AnimatePresence mode="popLayout">
               {proyectos.map((p, idx) => (
-                <motion.div key={p.id || p._id} layout initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white/[0.02] border border-white/5 rounded-2xl p-6">
+                <motion.div
+                  key={p.id || p._id}
+                  layout
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ delay: idx * 0.05 }}
+                  className="group relative bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 rounded-2xl p-6 transition-all duration-300"
+                >
                   <div className="flex flex-col lg:flex-row lg:items-center gap-6">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-black text-white italic uppercase tracking-tighter">{p.nombre}</h3>
-                        <span className={`px-2 py-0.5 rounded text-[9px] font-black border ${obtenerColorPrioridad(p.prioridad)}`}>{p.prioridad}</span>
+                        <h3 className="text-lg font-black text-white group-hover:text-[#05ABCA] transition-colors italic uppercase tracking-tighter">{p.nombre}</h3>
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-black border uppercase tracking-widest ${obtenerColorPrioridad(p.prioridad)}`}>
+                          {p.prioridad}
+                        </span>
                       </div>
                       <div className="flex flex-wrap gap-4 text-slate-500">
-                        <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase"><FiTag className="text-[#05ABCA]" /> {p.tipo}</span>
-                        <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase"><FiUser className="text-[#05ABCA]" /> {obtenerNombreCliente(p.clienteId)}</span>
-                        <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase"><FiCreditCard className="text-[#05ABCA]" /> {p.estadoPago}</span>
+                        <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider"><FiTag className="text-[#05ABCA]" /> {p.tipo}</span>
+                        <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider"><FiUser className="text-[#05ABCA]" /> {obtenerNombreCliente(p.clienteId)}</span>
+                        <span className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider ${p.estadoPago === 'Pagado' ? 'text-emerald-500' : ''}`}>
+                          <FiCreditCard /> {p.estadoPago}
+                        </span>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-6 lg:border-l lg:border-white/5 lg:pl-6">
                       <div className="text-right">
-                        <p className="text-[9px] font-black text-slate-600 uppercase">Inversión</p>
-                        <p className="text-sm font-black text-white italic">${Number(p.presupuestoTotal || 0).toLocaleString('es-CO')}</p>
+                        <p className="text-[9px] font-black text-slate-600 uppercase mb-1">Inversión</p>
+                        <p className="text-sm font-black text-white">${Number(p.presupuestoTotal || 0).toLocaleString('es-CO')}</p>
                       </div>
-                      <button onClick={() => eliminarProyecto(p.id || p._id)} className="w-10 h-10 rounded-xl bg-rose-500/5 text-rose-500/40 hover:text-rose-500 transition-all flex items-center justify-center">
+                      <div className="text-right">
+                        <p className="text-[9px] font-black text-slate-600 uppercase mb-1">Deadline</p>
+                        <p className="text-sm font-black text-[#05ABCA] flex items-center gap-1"><FiCalendar size={12}/> {p.fechaEntrega}</p>
+                      </div>
+                      <button 
+                        onClick={() => eliminarProyecto(p.id || p._id)} 
+                        className="w-10 h-10 rounded-xl bg-rose-500/5 text-rose-500/30 hover:text-rose-500 hover:bg-rose-500/10 transition-all flex items-center justify-center border border-transparent hover:border-rose-500/20"
+                      >
                         <FiTrash2 size={18} />
                       </button>
                     </div>
                   </div>
+                  <div className="absolute bottom-0 left-6 right-6 h-[1px] bg-gradient-to-r from-transparent via-[#05ABCA]/10 to-transparent" />
                 </motion.div>
               ))}
             </AnimatePresence>
+
+            {proyectos.length === 0 && !cargando && (
+              <div className="py-32 flex flex-col items-center justify-center bg-white/[0.01] border border-dashed border-white/10 rounded-[2rem]">
+                <FiCheckCircle className="text-white/5 mb-6" size={60} />
+                <p className="text-slate-500 text-xs font-black uppercase tracking-[0.3em]">Hangar Vacío - No hay misiones activas</p>
+              </div>
+            )}
           </div>
         </section>
       </main>
