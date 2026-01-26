@@ -93,13 +93,13 @@ export class ProyectosController {
   }
 
   @Delete(':id')
-  // Usamos @Param('id') solo, asegurándonos de que no haya NADA más en la línea
-  eliminar(@Param('id') id: any, @Req() req: any) { 
-    // Este log es vital. Si no lo ves en la consola de Vercel al fallar,
-    // es que la petición ni siquiera entró al controlador.
-    console.log("Intentando eliminar ID:", id); 
+  // Usamos un ID de tipo 'any' y nos aseguramos de que no haya NADA entre @Param e id
+  async eliminar(@Param('id') id: any, @Req() req: any) {
+    // Este console.log aparecerá en los logs de Vercel para confirmar que entró
+    console.log("ID recibido en el controlador:", id); 
     
     if (!req.user || req.user.rol !== 'admin') throw new UnauthorizedException();
+    
     return this.proyectosService.eliminar(id);
   }
 }
