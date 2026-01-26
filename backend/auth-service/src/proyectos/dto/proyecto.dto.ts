@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsNumber, IsEnum } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsNumberString } from 'class-validator';
 
 export class CreateProyectoDto {
   @IsString()
@@ -25,9 +25,10 @@ export class CreateProyectoDto {
   @IsOptional()
   fechaEntrega?: string;
 
-  @IsNumber()
+  // ✅ CORREGIDO PARA POSTGRES + NEON + VERCEL
   @IsOptional()
-  presupuestoTotal?: number;
+  @IsNumberString()
+  presupuestoTotal?: string;
 
   @IsString()
   @IsOptional()
