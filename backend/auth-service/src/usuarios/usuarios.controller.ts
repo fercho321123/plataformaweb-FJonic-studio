@@ -3,7 +3,11 @@ import {
   Post, 
   Body, 
   Get, 
-  UseGuards 
+  Delete,
+  Patch,
+  Param,
+  UseGuards,
+  Req
 } from '@nestjs/common';
 import { UsuariosService } from './usuarios.service';
 import { CrearUsuarioDto } from './dto/crear-usuario.dto';
@@ -15,20 +19,11 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 export class UsuariosController {
   constructor(private readonly usuariosService: UsuariosService) {}
 
-  /**
-   * REGISTRO PÚBLICO
-   * Permite que cualquier persona se registre (por defecto como Cliente).
-   */
   @Post('registro')
   async registrar(@Body() dto: CrearUsuarioDto) {
     return this.usuariosService.crearUsuario(dto);
   }
 
-  /**
-   * ✅ CREAR EMPLEADOS (STAFF)
-   * Solo accesible para usuarios con rol 'admin'.
-   * Requiere un Token JWT válido.
-   */
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Post('crear-staff')
@@ -36,10 +31,6 @@ export class UsuariosController {
     return this.usuariosService.crearStaff(dto);
   }
 
-  /**
-   * LISTAR USUARIOS
-   * Útil para ver el equipo en el panel administrativo.
-   */
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Get('lista')
@@ -47,9 +38,22 @@ export class UsuariosController {
     return this.usuariosService.obtenerTodos();
   }
 
-  /**
-   * RUTA DE PRUEBA PARA ADMIN
-   */
+  // 👉 NUEVO: MÉTODO PARA ELIMINAR STAFF/USUARIOS
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @Delete(':id')
+  async eliminar(@Param('id') id: string) {
+    return this.usuariosService.eliminar(id);
+  }
+
+  // 👉 NUEVO: MÉTODO PARA ACTUALIZAR (OPCIONAL PERO ÚTIL)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @Patch(':id')
+  async actualizar(@Param('id') id: string, @Body() data: any) {
+    return this.usuariosService.actualizar(id, data);
+  }
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Get('admin')
