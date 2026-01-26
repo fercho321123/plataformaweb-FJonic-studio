@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Usuario } from './entities/usuario.entity';
@@ -12,7 +12,6 @@ export class UsuariosService {
     private readonly usuarioRepo: Repository<Usuario>,
   ) {}
 
-  // 🔐 LOGIN: Ahora sí incluye el password para que tus credenciales funcionen
   async buscarPorEmail(email: string) {
     return await this.usuarioRepo.findOne({ 
       where: { email },
@@ -20,17 +19,18 @@ export class UsuariosService {
     });
   }
 
-  // 👥 NÓMINA: Filtra solo empleados (staff)
   async findAllStaff() {
     return await this.usuarioRepo.find({
       where: { rol: 'staff' }
     });
   }
 
-  // ✅ MÉTODO FALTANTE 1: Crear Staff (Admin)
+  // ✅ CREAR STAFF (Corregido para evitar error 2345)
   async crearStaff(dto: CrearUsuarioDto) {
-    const salt = await bcrypt.genSalt(10);
+    const saltRounds = 10; // Definimos el número de rondas
+    const salt = await bcrypt.genSalt(saltRounds); 
     const hashedPassword = await bcrypt.hash(dto.password, salt);
+    
     const nuevo = this.usuarioRepo.create({
       ...dto,
       password: hashedPassword,
@@ -39,10 +39,12 @@ export class UsuariosService {
     return await this.usuarioRepo.save(nuevo);
   }
 
-  // ✅ MÉTODO FALTANTE 2: Crear Usuario (Público)
+  // ✅ CREAR USUARIO (Corregido para evitar error 2345)
   async crearUsuario(dto: CrearUsuarioDto) {
-    const salt = await bcrypt.genSalt(10);
+    const saltRounds = 10;
+    const salt = await bcrypt.getSalt ? await bcrypt.genSalt(saltRounds) : saltRounds;
     const hashedPassword = await bcrypt.hash(dto.password, salt);
+    
     const usuario = this.usuarioRepo.create({
       ...dto,
       password: hashedPassword,
@@ -51,8 +53,30 @@ export class UsuariosService {
     return await this.usuarioRepo.save(usuario);
   }
 
-  // Otros métodos que tenías antes
   async obtenerTodos() {
     return await this.usuarioRepo.find();
+  }
+
+  // 👇 MÉTODO AGREGADO: ELIMINAR (Para borrar Staff con UUID)
+  async eliminar(id: string) {
+    const usuario = await this.usuarioRepo.findOne({ where: { id } });
+    if (!usuario) throw new NotFoundException('Empleado no encontrado');
+    
+    return await this.usuarioRepo.remove(usuario);
+  }
+
+  // 👇 MÉTODO AGREGADO: ACTUALIZAR (Para editar el perfil del staff)
+  async actualizar(id: string, data: any) {
+    const usuario = await this.usuarioRepo.findOne({ where: { id } });
+    if (!usuario) throw new NotFoundException('Empleado no encontrado');
+
+    // Si se cambia la contraseña, hay que hashearla de nuevo
+    if (data.password) {
+      const salt = await bcrypt.genSalt(10);
+      data.password = await bcrypt.hash(data.password, salt);
+    }
+
+    Object.assign(usuario, data);
+    return await this.usuarioRepo.save(usuario);
   }
 }

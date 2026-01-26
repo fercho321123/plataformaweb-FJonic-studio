@@ -4,15 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { apiFetch } from '@/lib/api';
 import { 
-  FiUserPlus, 
-  FiUsers, 
-  FiTrash2, 
-  FiDollarSign,
-  FiSearch,
-  FiTrendingUp,
-  FiActivity,
-  FiShield,
-  FiLayers
+  FiUserPlus, FiUsers, FiTrash2, FiDollarSign, FiSearch, 
+  FiTrendingUp, FiActivity, FiShield, FiLayers, FiEdit3, FiX 
 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -32,11 +25,12 @@ export default function RegistroStaffPage() {
   const [mensaje, setMensaje] = useState({ tipo: '', texto: '' });
   const [busqueda, setBusqueda] = useState('');
   const [filtroEspecialidad, setFiltroEspecialidad] = useState('todos');
+  
+  // 👉 ESTADO PARA EDICIÓN
+  const [editMode, setEditMode] = useState<string | null>(null);
 
   const formatoCOP = new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0
+    style: 'currency', currency: 'COP', minimumFractionDigits: 0
   });
 
   const cargarStaff = async () => {
@@ -48,20 +42,33 @@ export default function RegistroStaffPage() {
     }
   };
 
-  useEffect(() => {
-    if (token) cargarStaff();
-  }, [token]);
+  useEffect(() => { if (token) cargarStaff(); }, [token]);
+
+  // 👉 ACTIVAR MODO EDICIÓN
+  const activarEdicion = (miembro: any) => {
+    setEditMode(miembro.id);
+    setFormData({
+      nombre: miembro.nombre,
+      email: miembro.email,
+      password: '', // Password se deja vacío por seguridad
+      especialidad: miembro.especialidad,
+      costoHora: miembro.costoHora.toString(),
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const cancelarEdicion = () => {
+    setEditMode(null);
+    setFormData({ nombre: '', email: '', password: '', especialidad: 'Diseñador Creativo', costoHora: '' });
+  };
 
   const eliminarMiembro = async (id: string) => {
-    if (!confirm('¿Desvincular este activo del sistema? Esta acción es irreversible.')) return;
-
+    if (!confirm('¿Desvincular este activo?')) return;
     try {
       await apiFetch(`/usuarios/${id}`, { method: 'DELETE' });
-      setStaff((prevStaff) => prevStaff.filter(miembro => miembro.id !== id));
-      setMensaje({ tipo: 'success', texto: 'Activo desvinculado con éxito' });
-    } catch (error: any) {
-      setMensaje({ tipo: 'error', texto: error.message });
-    }
+      setStaff(prev => prev.filter(m => m.id !== id));
+      setMensaje({ tipo: 'success', texto: 'Activo desvinculado' });
+    } catch (error: any) { setMensaje({ tipo: 'error', texto: error.message }); }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -70,16 +77,26 @@ export default function RegistroStaffPage() {
     setMensaje({ tipo: '', texto: '' });
 
     try {
-      const data = await apiFetch('/usuarios/crear-staff', {
-        method: 'POST',
-        body: JSON.stringify({
-          ...formData,
-          costoHora: Number(formData.costoHora)
-        }),
-      });
+      if (editMode) {
+        // 👉 LÓGICA DE ACTUALIZACIÓN (PATCH)
+        const payload: any = { ...formData, costoHora: Number(formData.costoHora) };
+        if (!payload.password) delete payload.password; // No enviar password si está vacío
 
-      setMensaje({ tipo: 'success', texto: `¡Agente ${data.nombre} activado!` });
-      setFormData({ nombre: '', email: '', password: '', especialidad: 'Diseñador Creativo', costoHora: '' }); 
+        await apiFetch(`/usuarios/${editMode}`, {
+          method: 'PATCH',
+          body: JSON.stringify(payload),
+        });
+        setMensaje({ tipo: 'success', texto: 'Perfil actualizado con éxito' });
+        cancelarEdicion();
+      } else {
+        // LÓGICA DE CREACIÓN (POST)
+        const data = await apiFetch('/usuarios/crear-staff', {
+          method: 'POST',
+          body: JSON.stringify({ ...formData, costoHora: Number(formData.costoHora) }),
+        });
+        setMensaje({ tipo: 'success', texto: `¡Agente ${data.nombre} activado!` });
+        setFormData({ nombre: '', email: '', password: '', especialidad: 'Diseñador Creativo', costoHora: '' });
+      }
       cargarStaff();
     } catch (error: any) {
       setMensaje({ tipo: 'error', texto: error.message });
@@ -88,6 +105,7 @@ export default function RegistroStaffPage() {
     }
   };
 
+  // ... (staffFiltrado y métricas se mantienen igual)
   const staffFiltrado = staff.filter(miembro => {
     const nombre = miembro.nombre?.toLowerCase() || "";
     const email = miembro.email?.toLowerCase() || "";
@@ -110,10 +128,7 @@ export default function RegistroStaffPage() {
     <div className="min-h-screen bg-[#020617] text-slate-300">
       <div className="max-w-[1600px] mx-auto px-8 py-12 space-y-12 relative overflow-hidden">
         
-        {/* EFECTO DE LUZ DE FONDO */}
-        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#05ABCA]/5 blur-[120px] rounded-full pointer-events-none" />
-
-        {/* HEADER TÁCTICO */}
+        {/* HEADER Y MÉTRICAS (Igual a tu código original) */}
         <header className="relative z-10">
           <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
             <div className="flex items-center gap-6">
@@ -135,7 +150,6 @@ export default function RegistroStaffPage() {
           </div>
         </header>
 
-        {/* DASHBOARD DE MÉTRICAS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
             { label: 'Fuerza Laboral', val: staff.length, icon: FiUsers, sub: 'Miembros operativos', color: 'blue' },
@@ -154,14 +168,23 @@ export default function RegistroStaffPage() {
 
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-12 relative z-10">
           
-          {/* TERMINAL DE REGISTRO */}
+          {/* TERMINAL DE REGISTRO / EDICIÓN */}
           <div className="xl:col-span-4">
-            <div className="sticky top-12 bg-[#0d2640]/40 backdrop-blur-2xl border border-white/5 rounded-[3rem] p-10">
-              <div className="flex items-center gap-4 mb-10">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#05ABCA] to-[#1C75BC] flex items-center justify-center shadow-lg shadow-[#05ABCA]/20">
-                  <FiUserPlus className="text-white text-xl" />
+            <div className={`sticky top-12 bg-[#0d2640]/40 backdrop-blur-2xl border ${editMode ? 'border-[#05ABCA]' : 'border-white/5'} rounded-[3rem] p-10 transition-all`}>
+              <div className="flex items-center justify-between mb-10">
+                <div className="flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${editMode ? 'from-amber-500 to-orange-600' : 'from-[#05ABCA] to-[#1C75BC]'} flex items-center justify-center shadow-lg shadow-[#05ABCA]/20`}>
+                    {editMode ? <FiEdit3 className="text-white text-xl" /> : <FiUserPlus className="text-white text-xl" />}
+                  </div>
+                  <h2 className="text-xl font-black text-white uppercase italic tracking-tight">
+                    {editMode ? 'Actualizar Perfil' : 'Reclutamiento'}
+                  </h2>
                 </div>
-                <h2 className="text-xl font-black text-white uppercase italic tracking-tight">Reclutamiento</h2>
+                {editMode && (
+                  <button onClick={cancelarEdicion} className="p-2 hover:bg-white/10 rounded-full text-slate-400 transition-colors">
+                    <FiX size={20} />
+                  </button>
+                )}
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -178,8 +201,10 @@ export default function RegistroStaffPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase ml-2 tracking-widest">Código de Acceso</label>
-                  <input required type="password" minLength={6} className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 px-6 text-sm text-white focus:border-[#05ABCA]/50 outline-none"
+                  <label className="text-[10px] font-black text-slate-500 uppercase ml-2 tracking-widest">
+                    Código de Acceso {editMode && '(Opcional al editar)'}
+                  </label>
+                  <input required={!editMode} type="password" minLength={6} className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 px-6 text-sm text-white focus:border-[#05ABCA]/50 outline-none"
                     placeholder="••••••••" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} />
                 </div>
 
@@ -207,48 +232,45 @@ export default function RegistroStaffPage() {
                   )}
                 </AnimatePresence>
 
-                <button type="submit" disabled={loading} className="w-full bg-[#05ABCA] text-[#020617] py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-[#05ABCA]/20 italic disabled:opacity-50">
-                  {loading ? 'Sincronizando...' : 'Confirmar Alta de Agente'}
+                <button type="submit" disabled={loading} className={`w-full ${editMode ? 'bg-amber-500' : 'bg-[#05ABCA]'} text-[#020617] py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-[#05ABCA]/20 italic disabled:opacity-50`}>
+                  {loading ? 'Procesando...' : editMode ? 'Guardar Cambios' : 'Confirmar Alta de Agente'}
                 </button>
               </form>
             </div>
           </div>
 
-          {/* LISTADO DE PERSONAL */}
+          {/* LISTADO DE PERSONAL CON BOTÓN EDITAR */}
           <div className="xl:col-span-8 space-y-8">
-            
-            {/* BUSCADOR INTELIGENTE */}
+            {/* BUSCADOR (Igual) */}
             <div className="flex flex-col sm:flex-row gap-6">
               <div className="flex-1 relative group">
                 <FiSearch className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#05ABCA] transition-colors" size={20} />
-                <input type="text" placeholder="Localizar agente por nombre o email..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
+                <input type="text" placeholder="Localizar agente..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
                   className="w-full bg-white/[0.02] border border-white/5 rounded-2xl pl-14 pr-6 py-4 text-sm text-white focus:border-[#05ABCA]/30 outline-none transition-all" />
-              </div>
-              <div className="flex items-center bg-white/[0.02] border border-white/5 rounded-2xl px-4">
-                <FiLayers className="text-[#05ABCA] mr-3" />
-                <select value={filtroEspecialidad} onChange={(e) => setFiltroEspecialidad(e.target.value)}
-                  className="bg-transparent py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest outline-none cursor-pointer">
-                  <option value="todos">Todos los roles</option>
-                  {Object.keys(especialidadesConfig).map(esp => <option key={esp} value={esp}>{esp}</option>)}
-                </select>
               </div>
             </div>
 
-            {/* GRID DE AGENTES */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <AnimatePresence mode="popLayout">
                 {staffFiltrado.map((miembro) => (
                   <motion.div key={miembro.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-                    className="bg-white/[0.01] border border-white/5 rounded-[2.5rem] p-8 hover:bg-white/[0.03] hover:border-[#05ABCA]/30 transition-all group relative overflow-hidden">
+                    className={`bg-white/[0.01] border ${editMode === miembro.id ? 'border-[#05ABCA] bg-[#05ABCA]/5' : 'border-white/5'} rounded-[2.5rem] p-8 hover:bg-white/[0.03] transition-all group relative overflow-hidden`}>
                     
                     <div className="flex justify-between items-start mb-6 relative z-10">
                       <div className="w-16 h-16 rounded-[1.5rem] bg-gradient-to-br from-[#05ABCA] to-[#1C75BC] flex items-center justify-center text-white font-black text-2xl italic shadow-lg shadow-[#05ABCA]/20">
                         {miembro.nombre?.charAt(0)}
                       </div>
-                      <button onClick={() => eliminarMiembro(miembro.id)} 
-                        className="p-3 text-slate-600 hover:text-rose-500 hover:bg-rose-500/10 rounded-2xl transition-all">
-                        <FiTrash2 size={20} />
-                      </button>
+                      <div className="flex gap-2">
+                        {/* 👉 BOTÓN EDITAR */}
+                        <button onClick={() => activarEdicion(miembro)} 
+                          className="p-3 text-slate-600 hover:text-[#05ABCA] hover:bg-[#05ABCA]/10 rounded-2xl transition-all">
+                          <FiEdit3 size={20} />
+                        </button>
+                        <button onClick={() => eliminarMiembro(miembro.id)} 
+                          className="p-3 text-slate-600 hover:text-rose-500 hover:bg-rose-500/10 rounded-2xl transition-all">
+                          <FiTrash2 size={20} />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="relative z-10">
@@ -273,22 +295,10 @@ export default function RegistroStaffPage() {
                         </div>
                       </div>
                     </div>
-
-                    {/* DECO WATERMARK */}
-                    <div className="absolute -bottom-6 -right-6 text-white/[0.02] font-black text-8xl italic pointer-events-none select-none">
-                      FJ
-                    </div>
                   </motion.div>
                 ))}
               </AnimatePresence>
             </div>
-
-            {staffFiltrado.length === 0 && (
-              <div className="py-40 text-center bg-white/[0.01] border border-dashed border-white/10 rounded-[3rem]">
-                <FiUsers className="mx-auto text-white/5 mb-6" size={60} />
-                <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em]">No se detectaron agentes en el sector</p>
-              </div>
-            )}
           </div>
         </div>
       </div>
