@@ -62,25 +62,31 @@ export default function PaginaProyectos() {
 
   // --- FUNCIÓN DE ELIMINAR BLINDADA ---
   const eliminarProyecto = async (idOriginal: any) => {
-    // 1. Extraer el valor real (a veces los ID vienen como números o strings)
+    // 1. Extraer el valor real y convertirlo a string limpio
     const idLimpio = idOriginal?.toString().trim();
 
-    // 2. Validación preventiva: Si el ID no existe o no es numérico, avisamos
-    if (!idLimpio || isNaN(Number(idLimpio))) {
+    // 2. Validación: Ahora solo verificamos que el ID NO esté vacío.
+    // Quitamos la validación isNaN porque tus IDs son UUIDs (tienen letras).
+    if (!idLimpio) {
       console.error("ID NO VÁLIDO DETECTADO:", idOriginal);
-      alert(`Error local: El ID "${idLimpio}" no es una cadena numérica válida para el servidor.`);
+      alert("Error: No se pudo encontrar el identificador del proyecto.");
       return;
     }
 
     if (!confirm('¿Eliminar proyecto permanentemente?')) return;
     
     try {
-      // 3. Enviamos la petición asegurándonos de que sea /proyectos/123
+      // 3. Enviamos la petición al backend (que ya debería aceptar strings)
       await apiFetch(`/proyectos/${idLimpio}`, { method: 'DELETE' });
       
-      // 4. Actualizamos UI
-      setProyectos(prev => prev.filter(p => (p.id?.toString() || p._id?.toString()) !== idLimpio));
+      // 4. Actualizamos la interfaz eliminando el proyecto del estado
+      setProyectos(prev => prev.filter(p => {
+        const pId = (p.id || p._id)?.toString();
+        return pId !== idLimpio;
+      }));
+
     } catch (err: any) {
+      // Si el backend aún tiene el ParseIntPipe, el error saldrá aquí.
       alert(`Error del servidor: ${err.message}`);
     }
   };
