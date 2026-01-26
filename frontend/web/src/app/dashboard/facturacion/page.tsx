@@ -1,331 +1,450 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '@/context/AuthContext';
+import { useState, useEffect } from 'react';
+import jsPDF from 'jspdf';
 import { apiFetch } from '@/lib/api';
-import {
-  FiPlus,
-  FiTrash2,
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  FiFileText, 
+  FiDownload, 
+  FiPlus, 
+  FiUser, 
   FiCalendar,
-  FiUser,
   FiDollarSign,
-  FiLayers,
-  FiCheckCircle,
-  FiZap,
-  FiActivity,
-  FiSearch,
-  FiTag,
-  FiTarget,
-  FiTrendingUp
+  FiPackage,
+  FiCheckCircle
 } from 'react-icons/fi';
 
-export default function PaginaProyectos() {
-  const { token } = useAuth();
-  const [proyectos, setProyectos] = useState<any[]>([]);
-  const [clientes, setClientes] = useState<any[]>([]);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState('');
+interface ItemFactura {
+  descripcion: string;
+  cantidad: number;
+  valor: number;
+}
 
-  const [datosForm, setDatosForm] = useState({
-    nombre: '',
-    clienteId: '',
-    tipo: 'Marketing Digital',
-    prioridad: 'Media',
-    liderProyecto: '',
-    fechaEntrega: '',
-    presupuestoTotal: '',
-    descripcion: '',
-    estadoPago: 'Pendiente'
-  });
+interface FacturaHistorial {
+  id: string;
+  numero: string;
+  clienteNombre: string;
+  fechaEmision: string;
+  total: number;
+  items: ItemFactura[];
+}
 
-  const cargarTodo = async () => {
-    try {
-      setCargando(true);
-      const [dataProyectos, dataClientes] = await Promise.all([
-        apiFetch('/proyectos'),
-        apiFetch('/clientes')
-      ]);
-      setProyectos(Array.isArray(dataProyectos) ? dataProyectos : []);
-      setClientes(Array.isArray(dataClientes) ? dataClientes : []);
-    } catch (err: any) {
-      setError('Error de sincronización con el núcleo');
-    } finally {
-      setCargando(false);
-    }
-  };
+export default function FacturacionPage() {
+  const [cliente, setCliente] = useState({ nombre: '', nit: '', direccion: '', telefono: '' });
+  const [invoice, setInvoice] = useState({ numero: '', fecha: new Date().toISOString().split('T')[0], vencimiento: '', ciudad: 'Ubaté' });
+  const [items, setItems] = useState<ItemFactura[]>([{ descripcion: '', cantidad: 1, valor: 0 }]);
+  const [loading, setLoading] = useState(false);
+  const [historial, setHistorial] = useState<FacturaHistorial[]>([]);
+
+  const subtotal = items.reduce((acc, item) => acc + (item.cantidad * item.valor), 0);
+  const iva = subtotal * 0.19;
+  const total = subtotal + iva;
 
   useEffect(() => {
-    if (token) cargarTodo();
-  }, [token]);
+    const obtenerFacturas = async () => {
+      try {
+        const data = await apiFetch('/facturacion');
+        setHistorial(data);
+      } catch (error) {
+        console.error("Error cargando historial:", error);
+      }
+    };
+    obtenerFacturas();
+  }, []);
 
-  const manejarEnvio = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+  const agregarItem = () => setItems([...items, { descripcion: '', cantidad: 1, valor: 0 }]);
+
+  const guardarEnBD = async () => {
+    const nuevaFactura = {
+      clienteNombre: cliente.nombre || 'Cliente General',
+      clienteNit: cliente.nit || '---',
+      total: total,
+      items: items
+    };
+
     try {
-      await apiFetch('/proyectos', {
+      const guardada = await apiFetch('/facturacion', {
         method: 'POST',
-        body: JSON.stringify(datosForm),
+        body: JSON.stringify(nuevaFactura),
       });
-      setDatosForm({
-        nombre: '', clienteId: '', tipo: 'Marketing Digital',
-        prioridad: 'Media', liderProyecto: '', fechaEntrega: '',
-        presupuestoTotal: '', descripcion: '', estadoPago: 'Pendiente'
-      });
-      cargarTodo();
-    } catch (err: any) {
-      setError(err.message || 'Error al inicializar proyecto');
+      
+      if (guardada) {
+        setHistorial([guardada, ...historial]);
+        return guardada;
+      }
+    } catch (error) {
+      console.error("Error al guardar en BD:", error);
     }
+    return null;
   };
 
-  const eliminarProyecto = async (id: string) => {
-    if (!confirm('¿Terminar misión? Esta acción es irreversible.')) return;
+  const generarPDF = async (datosDesdeHistorial: FacturaHistorial | null = null) => {
+    setLoading(true);
+    
+    let facturaFinal = datosDesdeHistorial;
+
+    if (!datosDesdeHistorial) {
+      facturaFinal = await guardarEnBD();
+      if (!facturaFinal) {
+        setLoading(false);
+        return alert("Error al generar el número de factura en el servidor.");
+      }
+    }
+
+    const dClienteNombre = facturaFinal ? facturaFinal.clienteNombre : cliente.nombre;
+    const dInvoice = facturaFinal ? { numero: facturaFinal.numero, fecha: facturaFinal.fechaEmision } : invoice;
+    const dItems = facturaFinal ? facturaFinal.items : items;
+    const dTotal = facturaFinal ? facturaFinal.total : total;
+    const dSubtotal = dTotal / 1.19;
+    const dIva = dTotal - dSubtotal;
+
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const logoPath = '/logos/logonegro.png';
+    const azulFjonic = [10, 31, 51];
+    const cyanFjonic = [5, 171, 202];
+
     try {
-      await apiFetch(`/proyectos/${id}`, { method: 'DELETE' });
-      setProyectos(prev => prev.filter(p => p.id !== id));
-    } catch (err: any) {
-      alert(err.message);
+      doc.addImage(logoPath, 'PNG', 15, 10, 60, 20); 
+    } catch (error) {
+      console.error("Logo no cargado");
     }
-  };
 
-  const obtenerColorPrioridad = (prioridad: string) => {
-    switch(prioridad) {
-      case 'Alta': return 'bg-rose-500/10 border-rose-500/30 text-rose-400';
-      case 'Media': return 'bg-amber-500/10 border-amber-500/30 text-amber-400';
-      case 'Baja': return 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400';
-      default: return 'bg-slate-500/10 border-slate-500/30 text-slate-400';
-    }
-  };
+    doc.setTextColor(0, 0, 0).setFontSize(8).setFont("helvetica", "bold").text("FJONIC STUDIO", 195, 15, { align: "right" });
+    doc.setFont("helvetica", "normal").text("NIT: 1.003.924.724", 195, 19, { align: "right" });
+    doc.text("fjonicStudio@gmail.com", 195, 27, { align: "right" });
 
-  const obtenerNombreCliente = (clienteId: string) => {
-    const cliente = clientes.find(c => c.id === clienteId);
-    return cliente?.empresa || 'Cliente No Identificado';
+    doc.setDrawColor(cyanFjonic[0], cyanFjonic[1], cyanFjonic[2]).setLineWidth(0.8).line(15, 35, 195, 35);
+    doc.setTextColor(azulFjonic[0], azulFjonic[1], azulFjonic[2]).setFontSize(22).setFont("helvetica", "bold").text("FACTURA", 105, 52, { align: "center" });
+
+    doc.setFontSize(9).text("INFORMACIÓN DE FACTURA", 15, 65);
+    doc.setTextColor(0).setFont("helvetica", "normal").text(`Número: ${dInvoice.numero || '---'}`, 15, 71);
+    doc.text(`Fecha: ${new Date(dInvoice.fecha).toLocaleDateString() || '---'}`, 15, 76);
+
+    doc.setFillColor(245, 247, 249).roundedRect(110, 65, 85, 25, 1, 1, 'F');
+    doc.setTextColor(azulFjonic[0], azulFjonic[1], azulFjonic[2]).setFont("helvetica", "bold").text("DATOS DEL CLIENTE", 115, 71);
+    doc.setTextColor(0).setFontSize(8.5).text(`Nombre: ${(dClienteNombre || '---').toUpperCase()}`, 115, 77);
+
+    let yStart = 100;
+    doc.setFillColor(azulFjonic[0], azulFjonic[1], azulFjonic[2]).rect(15, yStart, 180, 8, 'F');
+    doc.setTextColor(255).text("DESCRIPCIÓN", 20, yStart + 5.5);
+    doc.text("CANT.", 145, yStart + 5.5, { align: "center" });
+    doc.text("TOTAL", 190, yStart + 5.5, { align: "right" });
+
+    let yRow = yStart + 8;
+    doc.setFont("helvetica", "normal");
+    dItems.forEach((item) => {
+      doc.setTextColor(0).text((item.descripcion || 'Servicio').toUpperCase(), 20, yRow + 6);
+      doc.text(item.cantidad.toString(), 145, yRow + 6, { align: "center" });
+      doc.text(`$${(item.cantidad * item.valor).toLocaleString()}`, 190, yRow + 6, { align: "right" });
+      doc.setDrawColor(230, 230, 230).line(15, yRow + 10, 195, yRow + 10);
+      yRow += 10;
+    });
+
+    yRow += 10;
+    doc.text("Subtotal:", 140, yRow);
+    doc.text(`$${dSubtotal.toLocaleString()}`, 195, yRow, { align: "right" });
+    doc.text("IVA (19%):", 140, yRow + 6);
+    doc.text(`$${dIva.toLocaleString()}`, 195, yRow + 6, { align: "right" });
+
+    doc.setTextColor(cyanFjonic[0], cyanFjonic[1], cyanFjonic[2]).setFontSize(12).setFont("helvetica", "bold");
+    doc.text("TOTAL A PAGAR:", 130, yRow + 15); 
+    doc.text(`$${dTotal.toLocaleString()}`, 195, yRow + 15, { align: "right" });
+
+    doc.setFillColor(azulFjonic[0], azulFjonic[1], azulFjonic[2]).rect(0, 275, 210, 22, 'F');
+    doc.setTextColor(255).setFontSize(7).text("Gracias por confiar en FJONIC STUDIO. Documento equivalente a factura.", 105, 287, { align: "center" });
+
+    doc.save(`Factura_${dInvoice.numero || 'FJONIC'}.pdf`);
+    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-300 selection:bg-[#05ABCA]/30">
-      
-      {/* DECORACIÓN DE FONDO */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-[10%] -right-[10%] w-[40%] h-[40%] bg-[#05ABCA]/5 rounded-full blur-[120px]" />
-        <div className="absolute -bottom-[10%] -left-[10%] w-[40%] h-[40%] bg-[#1C75BC]/5 rounded-full blur-[120px]" />
-      </div>
-
-      <header className="relative pt-12 pb-8 px-8 max-w-[1600px] mx-auto">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-white/5 pb-8">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="px-3 py-1 bg-gradient-to-r from-[#05ABCA]/20 to-transparent border-l-2 border-[#05ABCA] text-[#05ABCA] text-[10px] font-bold uppercase tracking-[0.3em]">
-                System_OS / Proyectos
-              </div>
-              <FiTarget className="text-[#05ABCA] animate-spin-slow" />
-            </div>
-            <h1 className="text-5xl font-black text-white tracking-tighter uppercase leading-none">
-              Control de <span className="text-[#05ABCA]">Misiones</span>
-            </h1>
-          </div>
-
-          <div className="flex items-center gap-6">
-            <div className="text-right">
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Activos Totales</p>
-              <p className="text-4xl font-black text-white">{proyectos.length}</p>
-            </div>
-            <div className="h-12 w-px bg-white/10" />
-            <div className="bg-[#05ABCA]/10 p-4 rounded-2xl border border-[#05ABCA]/20">
-              <FiActivity className="text-[#05ABCA] text-2xl animate-pulse" />
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="relative max-w-[1600px] mx-auto px-8 pb-20 grid grid-cols-1 xl:grid-cols-12 gap-10">
+    <div className="min-h-screen relative">
+      <div className="max-w-[1600px] mx-auto px-6 py-10 space-y-8">
         
-        {/* PANEL LATERAL: CREACIÓN */}
-        <aside className="xl:col-span-4">
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }} 
-            animate={{ opacity: 1, x: 0 }}
-            className="sticky top-10"
-          >
-            <div className="bg-white/[0.02] border border-white/10 rounded-[2.5rem] p-8 backdrop-blur-3xl shadow-2xl overflow-hidden relative group">
-              {/* Efecto de luz al hover */}
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#05ABCA] to-transparent opacity-50" />
+        {/* HEADER */}
+        <header className="mb-12">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-1 h-12 bg-gradient-to-b from-[#05ABCA] to-[#1C75BC] rounded-full" />
+            <div>
+              <h1 className="text-4xl font-bold text-white mb-1 tracking-tight">
+                Sistema de Facturación
+              </h1>
+              <p className="text-[#05ABCA]/60 text-sm font-medium">
+                Emisión y gestión de documentos tributarios
+              </p>
+            </div>
+          </div>
+          <div className="h-px bg-gradient-to-r from-[#05ABCA]/50 via-[#05ABCA]/20 to-transparent" />
+        </header>
+
+        {/* FORMULARIO PRINCIPAL */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative bg-gradient-to-br from-[#0d2640]/80 to-[#0A1F33]/80 backdrop-blur-xl rounded-2xl border border-[#05ABCA]/20 overflow-hidden"
+        >
+          {/* GLOW TOP */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-px bg-gradient-to-r from-transparent via-[#05ABCA] to-transparent" />
+          
+          {/* ENCABEZADO FACTURA */}
+          <div className="p-8 border-b border-[#05ABCA]/10 flex justify-between items-start">
+            <div className="w-48 h-20 flex items-center justify-start">
+              <img src="/logos/logonegro.png" alt="Logo FJONIC" className="h-full w-auto object-contain brightness-0 invert" />
+            </div>
+            <div className="text-right">
+              <h2 className="text-4xl font-black text-[#05ABCA] tracking-widest uppercase leading-none">Factura</h2>
+              <p className="text-[10px] tracking-[0.4em] text-white/60 font-bold mt-2">FJONIC STUDIO</p>
+            </div>
+          </div>
+
+          <div className="p-8 space-y-8">
+            {/* INFORMACIÓN Y CLIENTE */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               
-              <div className="flex items-center gap-4 mb-10">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#05ABCA] to-[#1C75BC] flex items-center justify-center shadow-xl shadow-[#05ABCA]/20 group-hover:scale-110 transition-transform">
-                  <FiPlus className="text-white text-2xl" />
+              {/* INFO FACTURA */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-1 h-4 bg-gradient-to-b from-[#05ABCA] to-transparent rounded-full" />
+                  <h3 className="text-xs font-black text-[#05ABCA] uppercase tracking-widest">Información</h3>
                 </div>
-                <div>
-                  <h3 className="text-xl font-black text-white uppercase italic">Nuevo Registro</h3>
-                  <p className="text-[#05ABCA] text-[9px] font-bold uppercase tracking-widest">Despliegue de parámetros</p>
+                <div className="space-y-3">
+                  <div className="bg-[#0A1F33]/50 border border-[#05ABCA]/20 rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <FiFileText className="text-[#05ABCA]" size={14} />
+                      <span className="text-[10px] text-[#05ABCA] font-bold uppercase tracking-wider">N° Factura</span>
+                    </div>
+                    <span className="text-sm font-bold text-white/40 italic">GENERADO AUTOMÁTICAMENTE</span>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-[#05ABCA] uppercase tracking-wider flex items-center gap-2">
+                      <FiCalendar size={12} />
+                      Fecha de Emisión
+                    </label>
+                    <input 
+                      type="date" 
+                      value={invoice.fecha} 
+                      className="w-full bg-[#0A1F33]/50 border border-[#05ABCA]/20 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#05ABCA] transition-all" 
+                      onChange={e => setInvoice({...invoice, fecha: e.target.value})} 
+                    />
+                  </div>
                 </div>
               </div>
 
-              <form onSubmit={manejarEnvio} className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase ml-2 tracking-widest">Nombre del activo</label>
-                  <div className="relative group">
-                    <FiLayers className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-[#05ABCA] transition-colors" />
+              {/* DATOS CLIENTE */}
+              <div className="bg-[#0A1F33]/30 border border-[#05ABCA]/10 rounded-xl p-6 space-y-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-1 h-4 bg-gradient-to-b from-[#05ABCA] to-transparent rounded-full" />
+                  <h3 className="text-xs font-black text-[#05ABCA] uppercase tracking-widest">Datos del Cliente</h3>
+                </div>
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-[#05ABCA] uppercase tracking-wider flex items-center gap-2">
+                      <FiUser size={12} />
+                      Nombre o Razón Social
+                    </label>
                     <input 
-                      className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm text-white focus:border-[#05ABCA]/50 focus:bg-[#05ABCA]/5 transition-all outline-none" 
-                      placeholder="Identificador del proyecto..." 
-                      value={datosForm.nombre} 
-                      onChange={(e) => setDatosForm({ ...datosForm, nombre: e.target.value })} 
-                      required 
+                      type="text" 
+                      placeholder="Cliente General" 
+                      className="w-full bg-[#0A1F33]/50 border border-[#05ABCA]/20 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-[#05ABCA] transition-all" 
+                      onChange={e => setCliente({...cliente, nombre: e.target.value})} 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-[#05ABCA] uppercase tracking-wider">
+                      NIT / CC
+                    </label>
+                    <input 
+                      type="text" 
+                      placeholder="000000000-0" 
+                      className="w-full bg-[#0A1F33]/50 border border-[#05ABCA]/20 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-[#05ABCA] transition-all" 
+                      onChange={e => setCliente({...cliente, nit: e.target.value})} 
                     />
                   </div>
                 </div>
+              </div>
+            </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase ml-2 tracking-widest">Asignar Cliente</label>
-                  <select 
-                    className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 px-6 text-sm text-white appearance-none focus:border-[#05ABCA]/50 outline-none cursor-pointer" 
-                    value={datosForm.clienteId} 
-                    onChange={(e) => setDatosForm({ ...datosForm, clienteId: e.target.value })} 
-                    required
+            {/* ITEMS */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-1 h-4 bg-gradient-to-b from-[#05ABCA] to-transparent rounded-full" />
+                <h3 className="text-xs font-black text-[#05ABCA] uppercase tracking-widest flex items-center gap-2">
+                  <FiPackage size={14} />
+                  Conceptos y Servicios
+                </h3>
+              </div>
+              
+              {/* HEADER TABLA */}
+              <div className="bg-gradient-to-r from-[#05ABCA] to-[#1C75BC] text-white grid grid-cols-12 p-4 rounded-xl text-[10px] font-black tracking-widest">
+                <div className="col-span-7">DESCRIPCIÓN</div>
+                <div className="col-span-2 text-center">CANT.</div>
+                <div className="col-span-3 text-right">VALOR UNIT.</div>
+              </div>
+              
+              {/* FILAS ITEMS */}
+              <AnimatePresence>
+                {items.map((item, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="grid grid-cols-12 gap-4 bg-[#0A1F33]/30 border border-[#05ABCA]/10 rounded-xl p-4 items-center"
                   >
-                    <option value="" className="bg-[#020617]">Seleccionar entidad...</option>
-                    {clientes.map(c => <option key={c.id} value={c.id} className="bg-[#020617]">{c.empresa}</option>)}
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase ml-2">Prioridad</label>
-                    <select className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 px-4 text-sm text-white outline-none focus:border-[#05ABCA]/50" value={datosForm.prioridad} onChange={(e) => setDatosForm({ ...datosForm, prioridad: e.target.value })}>
-                      <option value="Alta" className="bg-[#020617]">Alta</option>
-                      <option value="Media" className="bg-[#020617]">Media</option>
-                      <option value="Baja" className="bg-[#020617]">Baja</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase ml-2">Finalización</label>
-                    <input type="date" className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 px-4 text-sm text-white outline-none focus:border-[#05ABCA]/50" value={datosForm.fechaEntrega} onChange={(e) => setDatosForm({ ...datosForm, fechaEntrega: e.target.value })} required />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase ml-2 tracking-widest">Inversión Estimada</label>
-                  <div className="relative">
-                    <FiDollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-[#05ABCA]" />
-                    <input type="number" className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm text-white outline-none focus:border-[#05ABCA]/50" placeholder="0.00" value={datosForm.presupuestoTotal} onChange={(e) => setDatosForm({ ...datosForm, presupuestoTotal: e.target.value })} />
-                  </div>
-                </div>
-
-                <button type="submit" className="w-full bg-gradient-to-br from-[#05ABCA] to-[#1C75BC] hover:from-[#06c2e6] hover:to-[#218ae0] text-white py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] shadow-lg shadow-[#05ABCA]/20 transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3">
-                  <FiZap className="text-base" /> Iniciar Protocolo
-                </button>
-                {error && <p className="text-rose-500 text-[10px] font-bold text-center uppercase tracking-widest animate-bounce">{error}</p>}
-              </form>
-            </div>
-          </motion.div>
-        </aside>
-
-        {/* CONTENIDO PRINCIPAL: LISTADO */}
-        <section className="xl:col-span-8 space-y-6">
-          <div className="flex items-center justify-between px-4">
-            <div className="flex items-center gap-4">
-              <FiTrendingUp className="text-[#05ABCA]" />
-              <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Registros en tiempo real</h2>
-            </div>
-            <div className="h-px flex-1 mx-8 bg-gradient-to-r from-white/10 to-transparent" />
-          </div>
-
-          <div className="grid gap-6">
-            <AnimatePresence mode="popLayout">
-              {proyectos.map((p, idx) => (
-                <motion.div
-                  key={p.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ delay: idx * 0.05 }}
-                  className="group relative bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 hover:border-[#05ABCA]/30 rounded-[2rem] p-8 transition-all duration-500 ease-out"
-                >
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-                    {/* Info Principal */}
-                    <div className="space-y-4 flex-1">
-                      <div className="flex items-center gap-4">
-                        <span className={`px-3 py-1 rounded-lg border text-[9px] font-black uppercase tracking-widest ${obtenerColorPrioridad(p.prioridad)}`}>
-                          {p.prioridad}
-                        </span>
-                        <h3 className="text-2xl font-black text-white group-hover:text-[#05ABCA] transition-colors tracking-tighter italic uppercase">
-                          {p.nombre}
-                        </h3>
-                      </div>
-                      
-                      <div className="flex flex-wrap gap-6 items-center">
-                        <div className="flex items-center gap-2 text-slate-400">
-                          <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
-                            <FiTag className="text-[#05ABCA] text-xs" />
-                          </div>
-                          <span className="text-[11px] font-bold uppercase tracking-wider">{p.tipo}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-slate-400">
-                          <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
-                            <FiUser className="text-[#05ABCA] text-xs" />
-                          </div>
-                          <span className="text-[11px] font-bold uppercase tracking-wider">{obtenerNombreCliente(p.clienteId)}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Stats e Interacción */}
-                    <div className="flex items-center gap-10">
-                      <div className="text-right space-y-1">
-                        <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Inversión</p>
-                        <p className="text-xl font-black text-white tracking-tighter">
-                          ${Number(p.presupuestoTotal || 0).toLocaleString('es-CO')}
-                        </p>
-                      </div>
-
-                      <div className="text-right space-y-1">
-                        <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Entrega</p>
-                        <div className="flex items-center justify-end gap-2 text-[#05ABCA] font-black italic text-sm">
-                          <FiCalendar size={14} />
-                          {p.fechaEntrega}
-                        </div>
-                      </div>
-
-                      <button 
-                        onClick={() => eliminarProyecto(p.id)} 
-                        className="w-12 h-12 rounded-2xl bg-rose-500/5 border border-rose-500/10 flex items-center justify-center text-rose-500/20 hover:text-rose-500 hover:bg-rose-500/10 hover:border-rose-500/40 transition-all hover:rotate-12"
-                      >
-                        <FiTrash2 size={20} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Línea de progreso decorativa */}
-                  <div className="mt-8 h-[2px] w-full bg-white/5 rounded-full overflow-hidden">
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: "100%" }}
-                      transition={{ duration: 1.5, ease: "circOut" }}
-                      className="h-full bg-gradient-to-r from-transparent via-[#05ABCA]/40 to-transparent"
+                    <input 
+                      className="col-span-7 bg-transparent text-sm font-semibold text-white outline-none placeholder-slate-500 focus:text-[#05ABCA]" 
+                      placeholder="Producción Audiovisual..." 
+                      onChange={(e) => { const n = [...items]; n[index].descripcion = e.target.value; setItems(n); }} 
                     />
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-
-            {proyectos.length === 0 && !cargando && (
-              <motion.div 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }}
-                className="py-40 flex flex-col items-center justify-center border-2 border-dashed border-white/5 rounded-[3rem]"
+                    <input 
+                      type="number" 
+                      className="col-span-2 text-center text-sm font-bold text-white bg-[#0A1F33]/50 border border-[#05ABCA]/20 rounded-lg px-2 py-2 outline-none focus:border-[#05ABCA]" 
+                      placeholder="1" 
+                      value={item.cantidad} 
+                      onChange={(e) => { const n = [...items]; n[index].cantidad = Number(e.target.value); setItems(n); }} 
+                    />
+                    <div className="col-span-3 relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#05ABCA] font-bold">$</span>
+                      <input 
+                        type="number" 
+                        className="w-full text-right text-sm font-bold text-white bg-[#0A1F33]/50 border border-[#05ABCA]/20 rounded-lg pl-6 pr-3 py-2 outline-none focus:border-[#05ABCA]" 
+                        placeholder="0" 
+                        value={item.valor} 
+                        onChange={(e) => { const n = [...items]; n[index].valor = Number(e.target.value); setItems(n); }} 
+                      />
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+              
+              <button 
+                onClick={agregarItem} 
+                className="flex items-center gap-2 text-xs font-bold text-[#05ABCA] hover:text-[#1C75BC] transition-colors uppercase tracking-wider px-4 py-2 bg-[#05ABCA]/10 rounded-lg hover:bg-[#05ABCA]/20"
               >
-                <div className="relative mb-6">
-                  <FiCheckCircle className="text-[#05ABCA]/10" size={100} />
-                  <FiZap className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[#05ABCA] animate-pulse" size={40} />
+                <FiPlus size={14} />
+                Agregar Item
+              </button>
+            </div>
+
+            {/* TOTALES Y ACCIÓN */}
+            <div className="flex flex-col lg:flex-row justify-between items-end gap-8 pt-6 border-t border-[#05ABCA]/10">
+              <div className="text-xs text-slate-400 font-medium max-w-xs">
+                <p className="text-[#05ABCA]/60 uppercase tracking-wider">Documento oficial FJONIC STUDIO</p>
+                <p className="text-slate-500 mt-1">IVA incluido al 19% según normativa fiscal vigente</p>
+              </div>
+              
+              <div className="w-full lg:w-80 space-y-4">
+                <div className="bg-[#0A1F33]/30 border border-[#05ABCA]/10 rounded-xl p-6 space-y-3">
+                  <div className="flex justify-between text-sm text-slate-300">
+                    <span>Subtotal:</span>
+                    <span className="font-bold">${subtotal.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-slate-300">
+                    <span>IVA (19%):</span>
+                    <span className="font-bold">${iva.toLocaleString()}</span>
+                  </div>
+                  <div className="h-px bg-gradient-to-r from-transparent via-[#05ABCA]/30 to-transparent" />
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#05ABCA] font-black text-sm uppercase tracking-wider">Total:</span>
+                    <span className="text-2xl font-black text-[#05ABCA]">${total.toLocaleString()}</span>
+                  </div>
                 </div>
-                <h3 className="text-white font-black uppercase tracking-[0.5em] italic">Sin misiones activas</h3>
-                <p className="text-slate-500 text-[10px] mt-2 font-bold uppercase">Esperando inicialización de sistema...</p>
-              </motion.div>
-            )}
+                
+                <button 
+                  onClick={() => generarPDF()} 
+                  disabled={loading} 
+                  className="w-full bg-gradient-to-r from-[#05ABCA] to-[#1C75BC] text-white py-4 rounded-xl font-bold uppercase tracking-widest text-sm hover:shadow-lg hover:shadow-[#05ABCA]/30 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Generando...
+                    </>
+                  ) : (
+                    <>
+                      <FiDownload size={16} />
+                      Exportar Factura PDF
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
-        </section>
-      </main>
+        </motion.div>
+
+        {/* HISTORIAL */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="relative bg-gradient-to-br from-[#0d2640]/80 to-[#0A1F33]/80 backdrop-blur-xl rounded-2xl border border-[#05ABCA]/20 overflow-hidden"
+        >
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-px bg-gradient-to-r from-transparent via-[#05ABCA] to-transparent" />
+          
+          <div className="p-6 border-b border-[#05ABCA]/10 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#05ABCA] to-[#1C75BC] flex items-center justify-center">
+              <FiFileText className="text-white" size={20} />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white">Historial de Facturas</h2>
+              <p className="text-xs text-[#05ABCA]/60">Documentos emitidos y registrados</p>
+            </div>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="border-b border-[#05ABCA]/10">
+                <tr className="text-left">
+                  <th className="px-6 py-4 font-semibold text-[#05ABCA] uppercase tracking-wider text-xs">N° Factura</th>
+                  <th className="px-6 py-4 font-semibold text-[#05ABCA] uppercase tracking-wider text-xs">Cliente</th>
+                  <th className="px-6 py-4 font-semibold text-[#05ABCA] uppercase tracking-wider text-xs">Fecha</th>
+                  <th className="px-6 py-4 font-semibold text-[#05ABCA] uppercase tracking-wider text-xs">Monto</th>
+                  <th className="px-6 py-4 font-semibold text-[#05ABCA] uppercase tracking-wider text-xs text-center">Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                {historial.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-20 text-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-16 h-16 rounded-xl bg-[#05ABCA]/10 border border-[#05ABCA]/20 flex items-center justify-center">
+                          <FiFileText className="text-[#05ABCA]" size={24} />
+                        </div>
+                        <p className="text-slate-400 font-medium">No hay facturas registradas</p>
+                        <p className="text-slate-500 text-xs">Las facturas emitidas aparecerán aquí</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  historial.map((f, index) => (
+                    <motion.tr
+                      key={f.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="border-b border-[#05ABCA]/5 hover:bg-[#05ABCA]/5 transition-colors"
+                    >
+                      <td className="px-6 py-4 font-bold text-[#05ABCA]">{f.numero}</td>
+                      <td className="px-6 py-4 font-medium text-white">{f.clienteNombre}</td>
+                      <td className="px-6 py-4 text-slate-300">{new Date(f.fechaEmision).toLocaleDateString()}</td>
+                      <td className="px-6 py-4 font-bold text-white">${f.total.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-center">
+                        <button 
+                          onClick={() => generarPDF(f)} 
+                          className="p-2.5 bg-[#05ABCA]/10 text-[#05ABCA] rounded-lg hover:bg-gradient-to-r hover:from-[#05ABCA] hover:to-[#1C75BC] hover:text-white transition-all border border-[#05ABCA]/20"
+                        >
+                          <FiDownload size={16} />
+                        </button>
+                      </td>
+                    </motion.tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 }
