@@ -151,7 +151,7 @@ export class ProyectosService {
     return await this.proyectoRepo.save(proyecto);
   }
 
-  async eliminar(id: any) {
+  async eliminar(id: string) {
     const proyecto = await this.proyectoRepo.findOne({ where: { id } });
     if (!proyecto) throw new NotFoundException('Proyecto no encontrado');
     return await this.proyectoRepo.remove(proyecto);
