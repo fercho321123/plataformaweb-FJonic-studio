@@ -18,7 +18,7 @@ const colors = {
   cyan: '#05ABC4',
 };
 
-// SERVICIOS DISPONIBLES
+
 const servicios = [
   'Branding & Identidad Visual',
   'Producción Audiovisual 4K',
@@ -34,7 +34,6 @@ const servicios = [
   'Otro (Especificar en mensaje)'
 ];
 
-// PRESUPUESTOS
 const presupuestos = [
   'Menos de $500 USD',
   '$500 - $1,000 USD',
@@ -45,7 +44,6 @@ const presupuestos = [
   'Por definir'
 ];
 
-// TIMELINE
 const timelines = [
   'Urgente (1-2 semanas)',
   'Corto plazo (1 mes)',

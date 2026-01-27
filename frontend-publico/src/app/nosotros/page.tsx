@@ -508,7 +508,6 @@ export default function NosotrosPage() {
         </div>
       </section>
 
-      {/* CTA SECTION */}
       <section className="py-32 px-6 bg-gradient-to-br from-[#05ABC4] via-[#175A8C] to-[#1C75BC] relative overflow-hidden">
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-20 left-20 w-96 h-96 bg-white rounded-full blur-3xl animate-pulse"></div>
@@ -541,7 +540,6 @@ export default function NosotrosPage() {
         </div>
       </section>
 
-      {/* FOOTER */}
       <footer className="bg-[#071626] pt-32 pb-12 border-t border-white/5 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-4 gap-12 mb-20">
