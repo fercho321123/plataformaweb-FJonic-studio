@@ -820,7 +820,7 @@ export default function HomePage() {
                 Estudio estratégico de marketing digital y producción audiovisual. Construimos marcas coherentes, sólidas y perdurables que no solo existen, sino que permanecen.
               </p>
               <div className="flex gap-4">
-                <Link href="https://www.instagram.com/fjonic_studio" className="w-12 h-12 rounded-full bg-white/5 hover:bg-[#05ABC4] flex items-center justify-center transition-all group">
+                <Link href="https://www.instagram.com/fjonicstudio?igsh=MWZrOGs0emkzdmFudw==" className="w-12 h-12 rounded-full bg-white/5 hover:bg-[#05ABC4] flex items-center justify-center transition-all group">
                   <span className="text-xl group-hover:scale-110 transition-transform inline-block">
                     <FiInstagram />
                   </span>
