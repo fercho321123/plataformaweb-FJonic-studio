@@ -21,14 +21,15 @@ const colors = {
 const casosExito = [
   {
     id: 1,
-    titulo: 'The Smoky Legacy',
+    titulo: 'La tertulia',
     subtitulo: 'Hamburguesería al Barril',
     categoria: 'Branding & Producción Audiovisual',
     tagline: 'Tradición artesanal convertida en experiencia sensorial',
-    imagen: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=1200&h=800&fit=crop',
+    // La ruta debe ser relativa a la carpeta public
+    imagen: '/imagenes/REDONDO DE LOMO FINO 4.png', 
     desafio: {
       titulo: 'El Desafío',
-      descripcion: 'Una hamburguesería con técnica artesanal única necesitaba diferenciarse en un mercado saturado. Su proceso de cocción al barril y el característico humo no se traducían en una identidad visual memorable ni en contenido que captara la atención digital.',
+      descripcion: 'un negocio con ideas españolas, buscaba llegar a mas clientes por medio de contenido audiovisual ',
       puntos: [
         'Falta de identidad visual cohesiva',
         'Ausencia de contenido audiovisual profesional',
@@ -38,17 +39,17 @@ const casosExito = [
     },
     solucion: {
       titulo: 'Nuestra Estrategia',
-      descripcion: 'Desarrollamos un ecosistema de marca que celebra el arte culinario. Creamos una identidad visual atemporal inspirada en la técnica del fuego lento, complementada con spots cinematográficos que capturan la magia del humo y el barril.',
+      descripcion: 'Desarrollamos un ecosistema de marca que celebra el arte culinario. Creamos una identidad visual atemporal inspirada en la técnica del fuego lento, complementada con spots cinematográficos que capturan la magia de cada ingrediente.',
       puntos: [
         'Sistema de identidad visual premium con enfoque en texturas orgánicas',
         'Producción audiovisual 4K con técnicas de slow motion',
-        'Paleta cromática inspirada en brasas y maderas nobles',
+        'Paleta cromática inspirada en paleta de colores de la marca',
         'Estrategia de contenido enfocada en el proceso artesanal'
       ]
     },
     resultados: {
       titulo: 'El Legado',
-      descripcion: 'Una marca que trasciende el concepto de comida rápida para posicionarse como experiencia gastronómica premium.',
+      descripcion: 'Una marca que trasciende el concepto de comida gourmet para posicionarse como experiencia gastronómica premium.',
       metricas: [
         { label: 'Incremento en reconocimiento', valor: '340%' },
         { label: 'Engagement en redes', valor: '+285%' },
@@ -61,14 +62,14 @@ const casosExito = [
   },
   {
     id: 2,
-    titulo: 'Morning Essence',
-    subtitulo: 'Desayunos Saludables Premium',
-    categoria: 'Marketing Digital & Social Strategy',
+    titulo: 'The buerger station',
+    subtitulo: 'hamburguesas al barril',
+    categoria: 'Marketing Digital & contenido audivisual',
     tagline: 'Emociones que nutren, contenido que conecta',
-    imagen: 'https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?w=1200&h=800&fit=crop',
+    imagen: '/imagenes/bowl.jpeg',
     desafio: {
       titulo: 'El Desafío',
-      descripcion: 'Una marca de desayunos saludables con productos excepcionales enfrentaba invisibilidad digital. Su presencia en Instagram carecía de estrategia emocional y no lograba generar la conexión necesaria con una audiencia consciente de su bienestar.',
+      descripcion: 'Una marca de hamburguesas al barril que busca posicionarse en ubate como uno de los mejores sabores a nivel de burguers',
       puntos: [
         'Contenido genérico sin conexión emocional',
         'Bajo engagement y crecimiento estancado',
@@ -78,7 +79,7 @@ const casosExito = [
     },
     solucion: {
       titulo: 'Nuestra Estrategia',
-      descripcion: 'Diseñamos una estrategia de contenido centrada en momentos emotivos del día. Transformamos cada publicación en una invitación a rituales matutinos conscientes, elevando el desayuno de necesidad a experiencia de autocuidado.',
+      descripcion: 'Diseñamos una estrategia de contenido centrada en momentos emotivos del día. Transformamos cada publicación en una invitación a rituales matutinos conscientes, elevando el sabor al barril en algo autentico y distinto en ubate',
       puntos: [
         'Narrativa emocional enfocada en bienestar integral',
         'Fotografía lifestyle con paleta cálida y acogedora',
