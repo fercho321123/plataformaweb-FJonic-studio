@@ -2,21 +2,85 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { motion } from 'framer-motion';
 import { apiFetch } from '@/lib/api';
-import { 
-  FiUsers, FiMonitor, FiTrendingUp, FiZap,
-  FiCheckCircle, FiActivity, FiClock,
-  FiTarget, FiLayers, FiMenu, FiCpu
-} from 'react-icons/fi';
 
+// ── SVG Icons ──────────────────────────────────────────────────────────────────
+function IconUsers({ size = 22, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (<svg width={size} height={size} viewBox="0 0 22 22" fill="none"><circle cx="8" cy="7" r="3.5" stroke={color} strokeWidth="1.5"/><path d="M2 19c0-3.3 2.7-6 6-6" stroke={color} strokeWidth="1.5" strokeLinecap="round"/><circle cx="16" cy="7" r="3.5" stroke={color} strokeWidth="1.5"/><path d="M22 19c0-3.3-2.7-6-6-6" stroke={color} strokeWidth="1.5" strokeLinecap="round"/></svg>);
+}
+function IconLayers({ size = 22, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (<svg width={size} height={size} viewBox="0 0 22 22" fill="none"><path d="M3 8l8-5 8 5-8 5-8-5z" stroke={color} strokeWidth="1.5" strokeLinejoin="round"/><path d="M3 14l8 5 8-5M3 11l8 5 8-5" stroke={color} strokeWidth="1.5" strokeLinecap="round"/></svg>);
+}
+function IconTrend({ size = 22, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (<svg width={size} height={size} viewBox="0 0 22 22" fill="none"><path d="M3 16l5-6 5 4 6-8" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/><path d="M16 6h4v4" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>);
+}
+function IconZap({ size = 22, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (<svg width={size} height={size} viewBox="0 0 22 22" fill="none"><path d="M13 2L4 13h8l-3 7 9-11h-8l3-7z" stroke={color} strokeWidth="1.5" strokeLinejoin="round"/></svg>);
+}
+function IconClock({ size = 22, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (<svg width={size} height={size} viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="8.5" stroke={color} strokeWidth="1.5"/><path d="M11 7v4l3 2" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>);
+}
+function IconTarget({ size = 20, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (<svg width={size} height={size} viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke={color} strokeWidth="1.4"/><circle cx="10" cy="10" r="4" stroke={color} strokeWidth="1.4"/><circle cx="10" cy="10" r="1" fill={color}/></svg>);
+}
+function IconActivity({ size = 18, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (<svg width={size} height={size} viewBox="0 0 18 18" fill="none"><path d="M2 9h3l2-6 3 12 3-8 2 4 1-2h2" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>);
+}
+function IconMonitor({ size = 80, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (<svg width={size} height={size} viewBox="0 0 80 80" fill="none"><rect x="8" y="10" width="64" height="44" rx="5" stroke={color} strokeWidth="2"/><path d="M28 54v10M52 54v10M22 64h36" stroke={color} strokeWidth="2" strokeLinecap="round"/><path d="M20 30h16M20 38h10M44 28h16M44 36h10" stroke={color} strokeWidth="1.5" strokeLinecap="round" opacity=".5"/></svg>);
+}
+function IconCheck({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (<svg width={size} height={size} viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>);
+}
+function IconShield({ size = 18 }: { size?: number }) {
+  return (<svg width={size} height={size} viewBox="0 0 18 18" fill="none"><path d="M9 1.5L16 4.5v5c0 3.5-3 6.5-7 8-4-1.5-7-4.5-7-8v-5L9 1.5z" stroke="#fff" strokeWidth="1.4" strokeLinejoin="round"/><path d="M6 9l2 2 4-4" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>);
+}
+function IconArrowRight({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (<svg width={size} height={size} viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>);
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+function getTodayStr() {
+  return new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+// ── Sub-components ─────────────────────────────────────────────────────────────
+function HeroCard({ label, value, accent }: { label: string; value: string; accent: string }) {
+  return (
+    <div style={{ ...s.heroCard, borderTop: `3px solid ${accent}` }}>
+      <div style={s.heroCardLabel}>{label}</div>
+      <div style={s.heroCardVal}>{value}</div>
+    </div>
+  );
+}
+
+function MetricCard({
+  title, value, icon, accent, bg, trend,
+}: {
+  title: string; value: string | number; icon: React.ReactNode;
+  accent: string; bg: string; trend: string;
+}) {
+  return (
+    <div style={{ ...s.metricCard, borderTop: `3px solid ${accent}` }}>
+      <div style={s.metricCardTop}>
+        <div style={{ ...s.metricIconBox, background: bg, color: accent }}>{icon}</div>
+        <span style={{ ...s.metricTrend, background: bg, color: accent }}>{trend}</span>
+      </div>
+      <div style={s.metricValue}>{value}</div>
+      <div style={s.metricTitle}>{title}</div>
+    </div>
+  );
+}
+
+// ── Main Component ─────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { usuario } = useAuth();
+
   const [stats, setStats] = useState({
     clientes: 0,
     proyectos: 0,
     campanasActivas: 0,
-    roiPromedio: 0
+    roiPromedio: 0,
   });
   const [loading, setLoading] = useState(true);
   const [time, setTime] = useState(new Date());
@@ -31,17 +95,16 @@ export default function DashboardPage() {
       try {
         const [c, p] = await Promise.all([
           apiFetch('/clientes'),
-          apiFetch('/proyectos')
+          apiFetch('/proyectos'),
         ]);
-        
         setStats({
           clientes: Array.isArray(c) ? c.length : 0,
           proyectos: Array.isArray(p) ? p.length : 0,
           campanasActivas: Array.isArray(p) ? p.filter((item: any) => item.estado === 'iniciado').length : 0,
-          roiPromedio: 24.5
+          roiPromedio: 24.5,
         });
       } catch (error) {
-        console.error("Error cargando datos de agencia", error);
+        console.error('Error cargando datos de agencia', error);
       } finally {
         setLoading(false);
       }
@@ -49,192 +112,450 @@ export default function DashboardPage() {
     fetchAgencyData();
   }, []);
 
-  const cards = [
-    { title: 'Cuentas Activas', value: stats.clientes, Icon: FiUsers, gradient: 'from-[#05ABCA] to-[#1C75BC]', trend: '+12%' },
-    { title: 'Proyectos Activos', value: stats.proyectos, Icon: FiLayers, gradient: 'from-slate-700 to-slate-900', trend: '+8%' },
-    { title: 'ROI Promedio', value: `${stats.roiPromedio}%`, Icon: FiTrendingUp, gradient: 'from-emerald-500 to-teal-600', trend: '+5.2%' },
-    { title: 'Campañas Live', value: stats.campanasActivas, Icon: FiZap, gradient: 'from-[#05ABCA] via-[#1C75BC] to-[#0A1F33]', trend: 'ONLINE' },
+  if (loading) {
+    return (
+      <div style={s.loadingPage}>
+        <svg width="56" height="56" viewBox="0 0 56 56" fill="none" style={{ animation: 'spin 1s linear infinite' }}>
+          <circle cx="28" cy="28" r="22" stroke="rgba(5,171,196,0.2)" strokeWidth="3"/>
+          <path d="M28 6a22 22 0 0122 22" stroke="#05ABC4" strokeWidth="3" strokeLinecap="round"/>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </svg>
+        <div style={s.loadingText}>Cargando panel de control...</div>
+      </div>
+    );
+  }
+
+  const metrics = [
+    { title: 'Clientes activos',  value: stats.clientes,             icon: <IconUsers size={22} color="#fff" />,  accent: '#05ABC4', bg: '#05ABC4', trend: '+12%' },
+    { title: 'Proyectos activos', value: stats.proyectos,            icon: <IconLayers size={22} color="#fff" />, accent: '#1C75BC', bg: '#1C75BC', trend: '+8%'  },
+    { title: 'ROI promedio',      value: `${stats.roiPromedio}%`,    icon: <IconTrend size={22} color="#fff" />,  accent: '#059669', bg: '#059669', trend: '+5.2%'},
+    { title: 'Campañas live',     value: stats.campanasActivas,      icon: <IconZap size={22} color="#fff" />,   accent: '#175A8C', bg: '#175A8C', trend: 'LIVE'  },
   ];
 
-  if (loading) return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-[#020617] space-y-4">
-      <motion.div
-        className="w-16 h-16 border-2 border-[#05ABCA]/20 border-t-[#05ABCA] rounded-full"
-        animate={{ rotate: 360 }}
-        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-      />
-      <span className="text-[10px] uppercase tracking-[0.4em] text-[#05ABCA] font-black animate-pulse">Sincronizando Terminal Elite</span>
-    </div>
-  );
+  const actividades = [
+    { accion: 'Estrategia aprobada', cliente: 'TechCorp',     tiempo: 'Hace 2 min',  color: '#05ABC4' },
+    { accion: 'Reporte enviado',     cliente: 'Fashion Brand', tiempo: 'Hace 15 min', color: '#059669' },
+    { accion: 'Nuevo cliente',       cliente: 'StartUp Inc',   tiempo: 'Hace 1 hora', color: '#7c3aed' },
+  ];
+
+  const tareas = [
+    { label: 'Google Audit',   done: true  },
+    { label: 'SEO Pro',        done: true  },
+    { label: 'Ads en vivo',    done: false },
+  ];
 
   return (
-    <div className="min-h-screen bg-[#020617] relative overflow-hidden font-sans selection:bg-[#05ABCA]/30">
-      
-      {/* FONDO TECNOLÓGICO DINÁMICO */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 pointer-events-none"></div>
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-[#05ABCA]/10 blur-[120px] rounded-full"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#1C75BC]/10 blur-[120px] rounded-full"></div>
-        {/* Grid de líneas tecnológicas */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:40px_40px]"></div>
-      </div>
+    <div style={s.page}>
 
-      <div className="relative z-10 max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-6 sm:space-y-10 pb-20">
-        
-        {/* HEADER RESPONSIVO */}
-        <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 bg-white/[0.03] border border-white/10 p-6 sm:p-8 rounded-[2rem] sm:rounded-[3rem] backdrop-blur-xl shadow-2xl">
-          <div className="space-y-3 w-full lg:w-auto text-left">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-[#05ABCA] rounded-lg shadow-[0_0_15px_rgba(5,171,202,0.4)]">
-                <FiCpu className="text-white text-sm" />
-              </div>
-              <span className="px-3 py-1 bg-[#05ABCA]/10 text-[#05ABCA] text-[9px] font-black uppercase tracking-widest rounded-full border border-[#05ABCA]/20">
-                FJonic Core v4.0
-              </span>
-            </div>
-            <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tighter uppercase italic leading-none">
-              FJonic<span className="text-[#05ABCA] not-italic">.</span>Studio
-            </h1>
-            <p className="text-slate-400 text-xs sm:text-sm font-medium">
-              Terminal de Control: <span className="text-white font-bold">{usuario?.nombre}</span>
-            </p>
+      {/* TOPBAR */}
+      <header style={s.topbar}>
+        <div style={s.topbarLeft}>
+          <div style={s.logo}><IconShield size={18} /></div>
+          <div>
+            <div style={s.topbarName}>FJONIC Studio</div>
+            <div style={s.topbarModule}>Panel de Control</div>
           </div>
+        </div>
+        <div style={s.topbarDate}>{getTodayStr()}</div>
+      </header>
 
-          <div className="flex flex-row items-center gap-3 w-full lg:w-auto">
-            <div className="flex-1 lg:flex-none flex items-center gap-3 bg-black/40 border border-white/10 px-5 py-3 rounded-2xl">
-              <FiClock className="text-[#05ABCA] text-lg sm:text-xl" />
-              <div className="flex flex-col">
-                <span className="text-lg sm:text-xl font-mono font-bold text-white leading-none">
-                  {time.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
-                </span>
-                <span className="text-[8px] text-slate-500 uppercase font-black tracking-tighter">System Time</span>
-              </div>
+      {/* HERO */}
+      <section style={s.hero}>
+        <div style={s.heroInner}>
+          {/* Welcome */}
+          <div>
+            <div style={s.heroEyebrow}>Panel de control</div>
+            <div style={s.heroWelcome}>
+              Bienvenido, <span style={{ color: '#05ABC4' }}>{usuario?.nombre || 'Usuario'}</span>
+            </div>
+            <div style={s.heroHint}>
+              Aquí tienes un resumen en tiempo real de tu agencia.
             </div>
           </div>
-        </header>
 
-        {/* METRICAS - GRID ADAPTATIVO */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {cards.map((card, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              className="group relative bg-[#0f172a]/60 border border-white/5 hover:border-[#05ABCA]/50 p-6 rounded-[2rem] backdrop-blur-sm transition-all duration-500 overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-white/5 to-transparent rounded-bl-full pointer-events-none"></div>
-              <div className="flex justify-between items-start mb-6 relative z-10">
-                <div className={`p-4 rounded-2xl bg-gradient-to-br ${card.gradient} text-white shadow-2xl shadow-black/50`}>
-                  <card.Icon size={22} />
+          {/* Clock + hero cards */}
+          <div style={s.heroRight}>
+            <div style={s.clockBox}>
+              <IconClock size={20} color="#05ABC4" />
+              <div>
+                <div style={s.clockTime}>
+                  {time.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                 </div>
-                <span className="text-[9px] font-black text-[#05ABCA] bg-[#05ABCA]/10 px-2 py-1 rounded-md uppercase">{card.trend}</span>
+                <div style={s.clockLabel}>Hora del sistema</div>
               </div>
-              <div className="space-y-1 relative z-10">
-                <h3 className="text-3xl sm:text-4xl font-black text-white tracking-tighter">{card.value}</h3>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">{card.title}</p>
-              </div>
-            </motion.div>
+            </div>
+            <div style={s.heroCards}>
+              <HeroCard label="Clientes"   value={String(stats.clientes)}    accent="#05ABC4" />
+              <HeroCard label="Proyectos"  value={String(stats.proyectos)}   accent="#1C75BC" />
+              <HeroCard label="ROI Prom."  value={`${stats.roiPromedio}%`}   accent="#059669" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* BODY */}
+      <div style={s.body}>
+
+        {/* ── METRIC CARDS ── */}
+        <div style={s.metricsGrid}>
+          {metrics.map((m, i) => (
+            <MetricCard key={i} {...m} />
           ))}
         </div>
 
-        {/* SECCION INFERIOR - RESPONSIVA */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-          <div className="lg:col-span-2 space-y-6 sm:space-y-8">
-            {/* PANEL DE ACCIÓN */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="relative overflow-hidden bg-gradient-to-br from-[#0d2640] via-[#020617] to-[#0A1F33] border border-[#05ABCA]/30 p-8 sm:p-12 rounded-[2.5rem] sm:rounded-[3.5rem] shadow-2xl group"
-            >
-              <div className="relative z-10 flex flex-col md:flex-row gap-8 items-center">
-                <div className="flex-1 space-y-6 text-center md:text-left">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#05ABCA]/20 rounded-full border border-[#05ABCA]/30 text-[9px] font-black text-white uppercase tracking-[0.2em]">
-                     <FiTarget className="text-[#05ABCA] animate-pulse" /> Operaciones Activas
-                  </div>
-                  <h2 className="text-3xl sm:text-5xl font-black text-white leading-[0.9] tracking-tighter uppercase italic">
-                    Despliegue <br /> <span className="text-[#05ABCA]">Estratégico</span>
-                  </h2>
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-                    <button onClick={() => window.location.href='/dashboard/proyectos'} className="px-8 py-4 bg-[#05ABCA] hover:scale-105 text-[#020617] font-black text-[10px] uppercase tracking-[0.2em] rounded-xl transition-all shadow-[0_10px_30px_rgba(5,171,202,0.3)]">
-                      Lanzar Proyecto
-                    </button>
-                    <button onClick={() => window.location.href='/dashboard/clientes'} className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-xl border border-white/10 transition-all backdrop-blur-md">
-                      Base de Datos
-                    </button>
-                  </div>
-                </div>
-                <div className="hidden md:flex w-1/3 justify-center opacity-40 group-hover:opacity-100 transition-opacity duration-700">
-                  <FiMonitor className="text-9xl text-[#05ABCA] drop-shadow-[0_0_30px_rgba(5,171,202,0.5)]" />
-                </div>
-              </div>
-            </motion.div>
+        {/* ── MAIN CONTENT ── */}
+        <div style={s.contentGrid}>
 
-            {/* ACTIVIDAD - LISTA MOVIL */}
-            <div className="bg-[#0f172a]/40 border border-white/5 p-6 sm:p-8 rounded-[2rem] sm:rounded-[3rem] backdrop-blur-md">
-              <div className="flex justify-between items-center mb-8 italic uppercase font-black text-white tracking-tighter text-lg sm:text-xl">
-                <h3>Live Feed</h3>
-                <FiActivity className="text-[#05ABCA] animate-spin-slow" />
+          {/* Left column */}
+          <div style={s.contentLeft}>
+
+            {/* CTA Card */}
+            <div style={s.ctaCard}>
+              <div style={s.ctaLeft}>
+                <div style={s.ctaBadge}>
+                  <div style={s.ctaBadgeDot} />
+                  Operaciones activas
+                </div>
+                <div style={s.ctaTitle}>
+                  Despliegue{'\n'}
+                  <span style={{ color: '#05ABC4' }}>Estratégico</span>
+                </div>
+                <div style={s.ctaDesc}>
+                  Gestiona proyectos, clientes y campañas desde un solo lugar.
+                </div>
+                <div style={s.ctaBtns}>
+                  <button
+                    style={s.ctaBtnPrimary}
+                    onClick={() => window.location.href = '/dashboard/proyectos'}
+                  >
+                    <IconArrowRight size={15} color="#fff" />
+                    Lanzar proyecto
+                  </button>
+                  <button
+                    style={s.ctaBtnSecondary}
+                    onClick={() => window.location.href = '/dashboard/clientes'}
+                  >
+                    Ver clientes
+                  </button>
+                </div>
               </div>
-              <div className="space-y-3">
-                {[
-                  { a: 'Estrategia Aprobada', c: 'TechCorp', t: '2m', color: 'bg-[#05ABCA]' },
-                  { a: 'Reporte Enviado', c: 'Fashion Brand', t: '15m', color: 'bg-emerald-500' },
-                  { a: 'Nuevo Cliente', c: 'StartUp Inc', t: '1h', color: 'bg-purple-500' }
-                ].map((act, idx) => (
-                  <div key={idx} className="flex items-center gap-4 p-4 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-white/[0.05] transition-all">
-                    <div className={`w-1 h-8 ${act.color} rounded-full`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs sm:text-sm font-bold text-white truncate">{act.a}</p>
-                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">{act.c}</p>
+              <div style={s.ctaRight}>
+                <IconMonitor size={90} color="rgba(5,171,196,0.18)" />
+              </div>
+            </div>
+
+            {/* Activity feed */}
+            <div style={s.feedCard}>
+              <div style={s.feedHeader}>
+                <div style={s.feedTitle}>
+                  <div style={s.feedTitleDot} />
+                  Actividad reciente
+                </div>
+                <IconActivity size={18} color="#05ABC4" />
+              </div>
+              <div style={s.feedList}>
+                {actividades.map((a, i) => (
+                  <div key={i} style={s.feedItem}>
+                    <div style={{ ...s.feedItemBar, background: a.color }} />
+                    <div style={s.feedItemBody}>
+                      <div style={s.feedItemAccion}>{a.accion}</div>
+                      <div style={s.feedItemCliente}>{a.cliente}</div>
                     </div>
-                    <span className="text-[9px] font-mono text-[#05ABCA] font-bold whitespace-nowrap">{act.t}</span>
+                    <div style={s.feedItemTiempo}>{a.tiempo}</div>
                   </div>
                 ))}
               </div>
             </div>
           </div>
 
-          {/* COLUMNA DERECHA - OBJETIVOS */}
-          <div className="space-y-6 sm:space-y-8">
-            <div className="bg-[#0f172a]/80 border border-[#05ABCA]/20 p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-10">
-                <FiTarget size={60} className="text-white" />
-              </div>
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-10">Monthly Goals</h3>
-              <div className="space-y-10">
-                <div className="space-y-4">
-                  <div className="flex justify-between items-end text-[10px] font-black text-white uppercase tracking-widest">
-                    <span>Performance Web</span>
-                    <span className="text-[#05ABCA]">80%</span>
-                  </div>
-                  <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                    <motion.div initial={{ width: 0 }} animate={{ width: '80%' }} transition={{ duration: 1.5 }} className="h-full bg-gradient-to-r from-[#05ABCA] to-[#1C75BC] shadow-[0_0_10px_#05ABCA]" />
-                  </div>
+          {/* Right column */}
+          <div style={s.contentRight}>
+
+            {/* Goals card */}
+            <div style={s.goalsCard}>
+              <div style={s.goalsHeader}>
+                <div style={s.goalsTitle}>
+                  <IconTarget size={16} color="#05ABC4" />
+                  Objetivos del mes
                 </div>
-                <div className="grid grid-cols-1 gap-4 pt-6 border-t border-white/5">
-                  {['Google Audit', 'SEO Pro', 'Ads Live'].map((task, i) => (
-                    <div key={i} className="flex items-center gap-3 text-[10px] font-black uppercase text-white/70">
-                      <FiCheckCircle className={i < 2 ? "text-[#05ABCA]" : "text-slate-800"} />
-                      <span>{task}</span>
+              </div>
+
+              {/* Progress bar */}
+              <div style={s.progressSection}>
+                <div style={s.progressLabelRow}>
+                  <span style={s.progressLabel}>Performance web</span>
+                  <span style={s.progressPct}>80%</span>
+                </div>
+                <div style={s.progressTrack}>
+                  <div style={{ ...s.progressFill, width: '80%' }} />
+                </div>
+                <div style={s.progressLabelRow}>
+                  <span style={s.progressLabel}>Captación de leads</span>
+                  <span style={s.progressPct}>62%</span>
+                </div>
+                <div style={s.progressTrack}>
+                  <div style={{ ...s.progressFill, width: '62%', background: '#1C75BC' }} />
+                </div>
+                <div style={s.progressLabelRow}>
+                  <span style={s.progressLabel}>Retención de clientes</span>
+                  <span style={s.progressPct}>91%</span>
+                </div>
+                <div style={s.progressTrack}>
+                  <div style={{ ...s.progressFill, width: '91%', background: '#059669' }} />
+                </div>
+              </div>
+
+              {/* Tasks */}
+              <div style={s.tasksDivider} />
+              <div style={s.tasksList}>
+                <div style={s.tasksTitle}>Tareas pendientes</div>
+                {tareas.map((t, i) => (
+                  <div key={i} style={s.taskItem}>
+                    <div style={{
+                      ...s.taskCheck,
+                      background: t.done ? 'rgba(5,171,196,0.12)' : '#f4f7fb',
+                      borderColor: t.done ? '#05ABC4' : '#d0dce8',
+                    }}>
+                      {t.done && <IconCheck size={12} color="#05ABC4" />}
                     </div>
-                  ))}
-                </div>
+                    <span style={{ ...s.taskLabel, color: t.done ? '#4a7a9b' : '#0A1F33', textDecoration: t.done ? 'line-through' : 'none' }}>
+                      {t.label}
+                    </span>
+                    {t.done && <span style={s.taskDoneTag}>Completado</span>}
+                  </div>
+                ))}
               </div>
+            </div>
+
+            {/* Quick links */}
+            <div style={s.quickCard}>
+              <div style={s.quickTitle}>Accesos rápidos</div>
+              {[
+                { label: 'Gestión de personal',  href: '/dashboard/staff',       accent: '#05ABC4' },
+                { label: 'Facturación',           href: '/dashboard/facturacion', accent: '#1C75BC' },
+                { label: 'Finanzas',              href: '/dashboard/finanzas',    accent: '#175A8C' },
+              ].map((link, i) => (
+                <button
+                  key={i}
+                  style={{ ...s.quickLink, borderLeft: `3px solid ${link.accent}` }}
+                  onClick={() => window.location.href = link.href}
+                >
+                  <span style={s.quickLinkLabel}>{link.label}</span>
+                  <IconArrowRight size={14} color={link.accent} />
+                </button>
+              ))}
             </div>
           </div>
         </div>
       </div>
-
-      <style jsx global>{`
-        @keyframes spin-slow {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        .animate-spin-slow {
-          animation: spin-slow 8s linear infinite;
-        }
-      `}</style>
     </div>
   );
 }
+
+// ── Styles ─────────────────────────────────────────────────────────────────────
+const s: Record<string, React.CSSProperties> = {
+  page: {
+    minHeight: '100vh',
+    background: '#eef2f7',
+    fontFamily: "'DM Sans','Segoe UI',sans-serif",
+    color: '#0A1F33',
+  },
+
+  // Loading
+  loadingPage: {
+    minHeight: '100vh', background: '#eef2f7',
+    display: 'flex', flexDirection: 'column' as const,
+    alignItems: 'center', justifyContent: 'center', gap: 16,
+    fontFamily: "'DM Sans',sans-serif",
+  },
+  loadingText: { fontSize: 13, color: '#4a7a9b', fontWeight: 500, letterSpacing: '0.05em' },
+
+  // Topbar
+  topbar: {
+    background: '#0A1F33', padding: '0 2rem',
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    height: 64, borderBottom: '3px solid #0D3A66',
+  },
+  topbarLeft:   { display: 'flex', alignItems: 'center', gap: 14 },
+  logo: {
+    width: 42, height: 42, background: '#05ABC4', borderRadius: 10,
+    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  },
+  topbarName:   { fontFamily: "'Syne','DM Sans',sans-serif", fontWeight: 800, fontSize: 18, color: '#fff', letterSpacing: '-0.02em' },
+  topbarModule: { fontSize: 11, color: '#05ABC4', letterSpacing: '0.1em', textTransform: 'uppercase' as const, marginTop: 1 },
+  topbarDate:   { fontSize: 13, color: 'rgba(255,255,255,0.4)', textTransform: 'capitalize' as const },
+
+  // Hero
+  hero: {
+    background: 'linear-gradient(135deg,#0A1F33 0%,#0D3A66 55%,#175A8C 100%)',
+    padding: '2.25rem 2rem 2rem', borderBottom: '1px solid #0D3A66',
+  },
+  heroInner: {
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    gap: '2rem', flexWrap: 'wrap' as const,
+  },
+  heroEyebrow: { fontSize: 12, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.1em', textTransform: 'uppercase' as const, marginBottom: 6 },
+  heroWelcome: {
+    fontFamily: "'Syne',sans-serif", fontWeight: 800,
+    fontSize: 'clamp(1.6rem,3.5vw,2.6rem)', letterSpacing: '-0.04em', lineHeight: 1.1, color: '#fff',
+  },
+  heroHint:   { fontSize: 13, color: 'rgba(255,255,255,0.4)', marginTop: 8 },
+  heroRight:  { display: 'flex', flexDirection: 'column' as const, gap: 12, alignItems: 'flex-end' },
+  heroCards:  { display: 'flex', gap: 10, flexWrap: 'wrap' as const },
+  heroCard: {
+    background: 'rgba(255,255,255,0.09)', border: '1px solid rgba(255,255,255,0.12)',
+    borderRadius: 12, padding: '12px 18px', minWidth: 120,
+  },
+  heroCardLabel: { fontSize: 11, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.06em', textTransform: 'uppercase' as const, marginBottom: 4 },
+  heroCardVal:   { fontFamily: "'JetBrains Mono',monospace", fontSize: 17, fontWeight: 700, color: '#fff' },
+
+  // Clock
+  clockBox: {
+    display: 'flex', alignItems: 'center', gap: 12,
+    background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
+    borderRadius: 12, padding: '10px 18px',
+  },
+  clockTime:  { fontFamily: "'JetBrains Mono',monospace", fontSize: 20, fontWeight: 700, color: '#fff', lineHeight: 1 },
+  clockLabel: { fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginTop: 2 },
+
+  // Body
+  body: { padding: '1.5rem', display: 'flex', flexDirection: 'column' as const, gap: '1.25rem' },
+
+  // Metric cards
+  metricsGrid: { display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '1rem' },
+  metricCard: {
+    background: '#fff', border: '1px solid #d0dce8',
+    borderRadius: 14, padding: '1.25rem 1.5rem',
+    display: 'flex', flexDirection: 'column' as const, gap: 8,
+    transition: 'box-shadow .2s',
+  },
+  metricCardTop:  { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
+  metricIconBox: {
+    width: 46, height: 46, borderRadius: 12,
+    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  },
+  metricTrend: {
+    fontSize: 11, fontWeight: 700, padding: '3px 9px',
+    borderRadius: 6, letterSpacing: '0.04em',
+  },
+  metricValue: { fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: 32, color: '#0A1F33', letterSpacing: '-0.04em', lineHeight: 1 },
+  metricTitle: { fontSize: 12, fontWeight: 600, color: '#4a7a9b', textTransform: 'uppercase' as const, letterSpacing: '0.07em' },
+
+  // Content grid
+  contentGrid: { display: 'grid', gridTemplateColumns: '1fr 360px', gap: '1.25rem' },
+  contentLeft:  { display: 'flex', flexDirection: 'column' as const, gap: '1.25rem' },
+  contentRight: { display: 'flex', flexDirection: 'column' as const, gap: '1.25rem' },
+
+  // CTA card
+  ctaCard: {
+    background: 'linear-gradient(135deg,#0A1F33 0%,#0D3A66 60%,#175A8C 100%)',
+    borderRadius: 16, padding: '2.5rem',
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    gap: '2rem', overflow: 'hidden', position: 'relative' as const,
+    border: '1px solid rgba(5,171,196,0.2)',
+  },
+  ctaLeft:  { display: 'flex', flexDirection: 'column' as const, gap: 16, flex: 1 },
+  ctaBadge: {
+    display: 'inline-flex', alignItems: 'center', gap: 8,
+    background: 'rgba(5,171,196,0.15)', border: '1px solid rgba(5,171,196,0.3)',
+    borderRadius: 100, padding: '5px 14px',
+    fontSize: 11, fontWeight: 700, color: '#fff',
+    textTransform: 'uppercase' as const, letterSpacing: '0.08em', alignSelf: 'flex-start',
+  },
+  ctaBadgeDot: { width: 6, height: 6, borderRadius: '50%', background: '#05ABC4' },
+  ctaTitle: {
+    fontFamily: "'Syne',sans-serif", fontWeight: 800,
+    fontSize: 'clamp(1.6rem,3vw,2.4rem)', letterSpacing: '-0.04em',
+    lineHeight: 1.1, color: '#fff', whiteSpace: 'pre-line' as const,
+  },
+  ctaDesc: { fontSize: 14, color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, maxWidth: 360 },
+  ctaBtns: { display: 'flex', gap: 12, flexWrap: 'wrap' as const, marginTop: 4 },
+  ctaBtnPrimary: {
+    display: 'flex', alignItems: 'center', gap: 8,
+    padding: '13px 24px', background: '#1C75BC', color: '#fff',
+    border: 'none', borderRadius: 10,
+    fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: 14,
+    cursor: 'pointer', transition: 'all .18s',
+    boxShadow: '0 4px 16px rgba(28,117,188,0.3)',
+  },
+  ctaBtnSecondary: {
+    padding: '13px 24px',
+    background: 'rgba(255,255,255,0.08)', color: '#fff',
+    border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10,
+    fontFamily: "'DM Sans',sans-serif", fontWeight: 600, fontSize: 14,
+    cursor: 'pointer', transition: 'all .18s',
+  },
+  ctaRight: { opacity: 0.6, flexShrink: 0 },
+
+  // Feed card
+  feedCard: {
+    background: '#fff', border: '1px solid #d0dce8',
+    borderRadius: 14, padding: '1.5rem',
+    display: 'flex', flexDirection: 'column' as const, gap: '1rem',
+  },
+  feedHeader: {
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    paddingBottom: '0.75rem', borderBottom: '1px solid #e8f0f7',
+  },
+  feedTitle: {
+    display: 'flex', alignItems: 'center', gap: 8,
+    fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: 15, color: '#0A1F33',
+  },
+  feedTitleDot: { width: 10, height: 10, borderRadius: 3, background: '#05ABC4', flexShrink: 0 },
+  feedList:     { display: 'flex', flexDirection: 'column' as const, gap: 8 },
+  feedItem: {
+    display: 'flex', alignItems: 'center', gap: 12,
+    padding: '12px 14px', background: '#f4f7fb',
+    border: '1px solid #e8f0f7', borderRadius: 10,
+    transition: 'background .1s',
+  },
+  feedItemBar:     { width: 3, height: 38, borderRadius: 3, flexShrink: 0 },
+  feedItemBody:    { flex: 1, display: 'flex', flexDirection: 'column' as const, gap: 3 },
+  feedItemAccion:  { fontSize: 13, fontWeight: 600, color: '#0A1F33' },
+  feedItemCliente: { fontSize: 11, color: '#4a7a9b', textTransform: 'uppercase' as const, letterSpacing: '0.05em', fontWeight: 600 },
+  feedItemTiempo:  { fontSize: 11, fontFamily: "'JetBrains Mono',monospace", color: '#05ABC4', fontWeight: 600, flexShrink: 0 },
+
+  // Goals card
+  goalsCard: {
+    background: '#fff', border: '1px solid #d0dce8',
+    borderTop: '3px solid #05ABC4',
+    borderRadius: 14, padding: '1.5rem',
+    display: 'flex', flexDirection: 'column' as const, gap: '1.1rem',
+  },
+  goalsHeader: { paddingBottom: '0.5rem', borderBottom: '1px solid #e8f0f7' },
+  goalsTitle: {
+    display: 'flex', alignItems: 'center', gap: 8,
+    fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: 15, color: '#0A1F33',
+  },
+  progressSection:  { display: 'flex', flexDirection: 'column' as const, gap: 10 },
+  progressLabelRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  progressLabel:    { fontSize: 12, fontWeight: 600, color: '#4a7a9b' },
+  progressPct:      { fontSize: 12, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, color: '#0D3A66' },
+  progressTrack:    { height: 6, background: '#e8f0f7', borderRadius: 3, overflow: 'hidden' },
+  progressFill:     { height: '100%', background: '#05ABC4', borderRadius: 3, transition: 'width .4s' },
+  tasksDivider:     { height: 1, background: '#e8f0f7' },
+  tasksList:        { display: 'flex', flexDirection: 'column' as const, gap: 8 },
+  tasksTitle:       { fontSize: 11, fontWeight: 700, color: '#175A8C', textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: 4 },
+  taskItem: { display: 'flex', alignItems: 'center', gap: 10 },
+  taskCheck: {
+    width: 22, height: 22, borderRadius: 6, border: '1.5px solid',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  },
+  taskLabel:   { flex: 1, fontSize: 13, fontWeight: 500 },
+  taskDoneTag: { fontSize: 10, fontWeight: 700, color: '#05ABC4', background: 'rgba(5,171,196,0.1)', padding: '2px 7px', borderRadius: 5, letterSpacing: '0.04em' },
+
+  // Quick links
+  quickCard: {
+    background: '#fff', border: '1px solid #d0dce8',
+    borderRadius: 14, padding: '1.5rem',
+    display: 'flex', flexDirection: 'column' as const, gap: 8,
+  },
+  quickTitle: { fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: 15, color: '#0A1F33', marginBottom: 4 },
+  quickLink: {
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    padding: '12px 14px', background: '#f4f7fb',
+    border: '1px solid #e8f0f7', borderRadius: 10,
+    cursor: 'pointer', transition: 'background .15s', fontFamily: 'inherit',
+  },
+  quickLinkLabel: { fontSize: 14, fontWeight: 600, color: '#0A1F33' },
+};
