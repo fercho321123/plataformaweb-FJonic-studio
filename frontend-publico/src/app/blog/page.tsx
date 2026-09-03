@@ -30,6 +30,48 @@ const categorias = [
 const articulos = [
   {
     id: 1,
+    titulo: 'Deja de publicar por publicar: cómo construir una estrategia digital para tu negocio',
+    slug: 'deja-de-publicar-por-publicar',
+    extracto: 'En la actualidad, tener presencia en redes sociales es fundamental. Sin embargo, publicar constantemente no significa tener una estrategia digital.',
+    contenido: 'En la actualidad, tener presencia en redes sociales es fundamental para emprendedores, marcas personales y pequeñas empresas que buscan mejorar su visibilidad. Sin embargo, publicar constantemente no significa tener una estrategia digital. Cada contenido debe responder a un objetivo y estar relacionado con las necesidades del público. Una estrategia de marketing digital permite organizar los contenidos, definir los canales de comunicación y establecer acciones orientadas al posicionamiento, la interacción y la conversión. Antes de publicar, es importante conocer al público objetivo y determinar qué se quiere lograr con cada contenido. Para FJONIC Studio, el público está conformado principalmente por emprendedores, marcas personales y pequeñas empresas que buscan fortalecer su imagen, comunicación y presencia digital. El contenido digital debe aportar valor y responder a las necesidades de la audiencia. Los contenidos educativos permiten compartir conocimientos; los contenidos demostrativos muestran procesos y resultados; el contenido de interacción fortalece el engagement; y el contenido promocional presenta los servicios de la empresa. El contenido de valor ayuda a generar confianza y autoridad, mientras que el branding permite fortalecer la identidad y el reconocimiento de la marca. Una estrategia digital debe acompañar al usuario desde el primer contacto hasta una posible contratación. Primero se busca generar visibilidad y reconocimiento; posteriormente, interacción y consideración; finalmente, se facilita la conversión mediante llamados a la acción claros. También es importante medir los resultados. Indicadores como alcance, impresiones, interacciones, clics, mensajes y leads permiten conocer el desempeño de las acciones digitales. Dejar de publicar por publicar significa comenzar a comunicar con intención. Una marca necesita conocer a su público, establecer objetivos, crear contenido de valor y utilizar sus canales de manera estratégica. En FJONIC Studio, la creatividad y el marketing digital se integran para ayudar a emprendedores, marcas personales y pequeñas empresas a fortalecer su posicionamiento y construir una presencia digital profesional.',
+    imagen: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&h=800&fit=crop',
+    categoria: 'marketing',
+    autor: 'FJONIC Studio',
+    fecha: '18 de Enero, 2026',
+    tiempoLectura: '6 min',
+    tags: ['Marketing', 'Estrategia', 'Social Media', 'Conversión'],
+    destacado: true
+  },
+  {
+    id: 2,
+    titulo: 'El poder del video: cómo el contenido audiovisual puede fortalecer tu marca',
+    slug: 'poder-del-video-contenido-audiovisual',
+    extracto: 'El contenido audiovisual se ha convertido en una herramienta importante para captar la atención, transmitir mensajes y fortalecer la identidad de una empresa.',
+    contenido: 'En un entorno digital donde las personas reciben constantemente información, las marcas necesitan encontrar formas atractivas de comunicar sus ideas. El contenido audiovisual se ha convertido en una herramienta importante para captar la atención, transmitir mensajes y fortalecer la identidad de una empresa. Un video puede mostrar en pocos segundos la personalidad de una marca, explicar un servicio, presentar un producto o mostrar un proceso creativo. Por esta razón, la producción audiovisual puede convertirse en un recurso estratégico dentro del marketing digital. El video permite comunicar información de una manera dinámica y cercana. Además, puede utilizarse en diferentes plataformas digitales y adaptarse a distintos objetivos. Una empresa puede crear videos educativos para compartir conocimientos, videos demostrativos para mostrar sus procesos, contenidos de branding para fortalecer su identidad o videos promocionales para presentar sus servicios. Para FJONIC Studio, la producción audiovisual forma parte de su propuesta de valor y se integra con el marketing digital para ayudar a emprendedores, marcas personales y pequeñas empresas a fortalecer su presencia digital. Un contenido audiovisual no debe enfocarse únicamente en vender. También puede ayudar a construir reconocimiento y confianza. La música, las imágenes, los colores, la edición, el mensaje y la forma de presentar la información deben mantener coherencia con la identidad visual de la marca. De esta manera, cada video contribuye al branding y al posicionamiento. Además, mostrar procesos, proyectos y detrás de cámaras permite que la audiencia conozca el trabajo que existe detrás de una marca y genere una relación más cercana con ella. Para que un video sea parte de una estrategia, debe tener un objetivo definido. Puede buscar aumentar el alcance, generar interacción, presentar un servicio o conseguir nuevos clientes potenciales. También es importante analizar indicadores como reproducciones, alcance, interacciones, clics y mensajes recibidos. Estos datos permiten conocer el rendimiento del contenido y realizar mejoras. El video no es solamente una pieza visual atractiva; es una herramienta de comunicación que puede fortalecer el posicionamiento, el branding y la conexión con la audiencia. En FJONIC Studio combinamos creatividad, comunicación visual y estrategia para desarrollar contenidos audiovisuales que permitan a las marcas comunicar sus ideas de manera profesional.',
+    imagen: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=1200&h=800&fit=crop',
+    categoria: 'video',
+    autor: 'FJONIC Studio',
+    fecha: '16 de Enero, 2026',
+    tiempoLectura: '6 min',
+    tags: ['Video', 'Producción Audiovisual', 'Branding', 'Storytelling'],
+    destacado: true
+  },
+  {
+    id: 3,
+    titulo: 'Marca personal: cómo construir una presencia profesional en redes sociales',
+    slug: 'marca-personal-presencia-profesional',
+    extracto: 'Convierte tu experiencia y creatividad en una marca que conecte. Descubre cómo diferenciarte y generar confianza en redes sociales.',
+    contenido: 'En el entorno digital, las personas no solo siguen empresas: también siguen profesionales, creadores y emprendedores con quienes se sienten identificados. Por esta razón, desarrollar una marca personal puede ser una oportunidad para diferenciarse, generar confianza y fortalecer la presencia profesional en redes sociales. Una marca personal no consiste únicamente en tener un logotipo o publicar fotografías. Se construye a partir de la forma en que una persona comunica sus conocimientos, experiencia, valores y propuesta de valor. Una presencia profesional permite que las personas reconozcan qué hace una persona, qué conocimientos posee y qué puede ofrecer. Para un emprendedor o creador de contenido, las redes sociales pueden convertirse en un espacio para compartir conocimientos, mostrar proyectos, explicar procesos y construir una comunidad. La constancia también es importante. Mantener una comunicación coherente ayuda a fortalecer el posicionamiento y permite que la audiencia identifique con mayor facilidad la personalidad y propuesta de la marca. El contenido es uno de los principales recursos para desarrollar una marca personal. Compartir consejos, experiencias, conocimientos y proyectos permite demostrar experiencia y generar contenido de valor. También es importante combinar diferentes formatos, como publicaciones, videos, historias y contenidos audiovisuales. Cada formato puede cumplir una función diferente dentro de la estrategia digital. El objetivo no debe ser publicar por publicar, sino crear contenidos que respondan a los intereses del público y ayuden a construir una relación con la audiencia. Una marca personal sólida necesita generar confianza. Para conseguirlo, es importante mostrar autenticidad, mantener una comunicación profesional y compartir información útil. Cuando una persona reconoce el valor de una marca personal, es más probable que considere sus productos, servicios o conocimientos cuando tenga una necesidad relacionada. Por eso, la estrategia debe combinar visibilidad, engagement, posicionamiento y conversión. Construir una marca personal requiere tiempo, planificación y constancia. No se trata de aparentar ser alguien diferente, sino de comunicar de manera estratégica aquello que hace única a una persona. En FJONIC Studio entendemos la marca personal como una herramienta para fortalecer la identidad, mejorar la comunicación digital y ayudar a profesionales y emprendedores a proyectar una imagen más sólida.',
+    imagen: 'https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=1200&h=800&fit=crop',
+    categoria: 'branding',
+    autor: 'FJONIC Studio',
+    fecha: '14 de Enero, 2026',
+    tiempoLectura: '6 min',
+    tags: ['Marca Personal', 'Branding', 'Redes Sociales', 'Estrategia'],
+    destacado: true
+  },
+  {
+    id: 4,
     titulo: '5 Tendencias de Marketing Digital que Dominarán en 2026',
     slug: '5-tendencias-marketing-digital-2026',
     extracto: 'El panorama digital evoluciona constantemente. Descubre las estrategias que marcarán la diferencia este año y cómo implementarlas en tu negocio.',
@@ -40,10 +82,10 @@ const articulos = [
     fecha: '15 de Enero, 2026',
     tiempoLectura: '8 min',
     tags: ['Marketing', 'Tendencias', 'Social Media', 'IA'],
-    destacado: true
+    destacado: false
   },
   {
-    id: 2,
+    id: 5,
     titulo: 'Cómo Crear una Identidad Visual que Conecte con tu Audiencia',
     slug: 'crear-identidad-visual-audiencia',
     extracto: 'Tu identidad visual es mucho más que un logo. Es la personalidad de tu marca traducida en elementos tangibles que generan reconocimiento y confianza.',
@@ -54,24 +96,10 @@ const articulos = [
     fecha: '12 de Enero, 2026',
     tiempoLectura: '6 min',
     tags: ['Branding', 'Diseño', 'Identidad Visual', 'Psicología del Color'],
-    destacado: true
+    destacado: false
   },
   {
-    id: 3,
-    titulo: 'El Poder del Video Marketing: Por Qué tu Marca lo Necesita',
-    slug: 'poder-video-marketing',
-    extracto: 'El contenido audiovisual genera 1200% más engagement que texto e imágenes combinados. Descubre cómo aprovecharlo para tu marca.',
-    contenido: 'El video se ha convertido en el formato preferido por los consumidores. Desde stories hasta contenido de formato largo, exploramos cómo crear videos que conviertan...',
-    imagen: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=1200&h=800&fit=crop',
-    categoria: 'video',
-    autor: 'Equipo Audiovisual',
-    fecha: '10 de Enero, 2026',
-    tiempoLectura: '7 min',
-    tags: ['Video', 'Producción', 'Marketing', 'Storytelling'],
-    destacado: true
-  },
-  {
-    id: 4,
+    id: 6,
     titulo: 'Instagram en 2026: Estrategias que Funcionan',
     slug: 'instagram-estrategias-2026',
     extracto: 'Con más de 2 mil millones de usuarios activos, Instagram sigue siendo una plataforma clave. Aprende a destacar en medio del ruido digital.',
@@ -85,21 +113,7 @@ const articulos = [
     destacado: false
   },
   {
-    id: 5,
-    titulo: 'Branding Emocional: Más Allá del Logo',
-    slug: 'branding-emocional',
-    extracto: 'Las marcas más exitosas no venden productos, venden emociones. Descubre cómo construir conexiones auténticas con tu audiencia.',
-    contenido: 'El branding emocional se trata de crear experiencias memorables que resuenan con los valores y aspiraciones de tus clientes...',
-    imagen: 'https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=1200&h=800&fit=crop',
-    categoria: 'branding',
-    autor: 'Equipo Estratégico',
-    fecha: '5 de Enero, 2026',
-    tiempoLectura: '9 min',
-    tags: ['Branding', 'Estrategia', 'Psicología', 'Experiencia'],
-    destacado: false
-  },
-  {
-    id: 6,
+    id: 7,
     titulo: 'Producción 4K: ¿Vale la Pena la Inversión?',
     slug: 'produccion-4k-inversion',
     extracto: 'La calidad del video puede hacer o romper la percepción de tu marca. Analizamos los pros y contras de la producción en ultra alta definición.',
@@ -113,7 +127,7 @@ const articulos = [
     destacado: false
   },
   {
-    id: 7,
+    id: 8,
     titulo: 'Diseño Web que Convierte: Principios Fundamentales',
     slug: 'diseno-web-convierte',
     extracto: 'Tu sitio web es tu vendedor 24/7. Aprende los principios de diseño que transforman visitantes en clientes.',
@@ -127,7 +141,7 @@ const articulos = [
     destacado: false
   },
   {
-    id: 8,
+    id: 9,
     titulo: 'SEO Local: Cómo Dominar tu Mercado Regional',
     slug: 'seo-local-mercado-regional',
     extracto: 'El 46% de las búsquedas en Google tienen intención local. Aprende a optimizar tu presencia para clientes cercanos.',
@@ -138,20 +152,6 @@ const articulos = [
     fecha: '28 de Diciembre, 2025',
     tiempoLectura: '7 min',
     tags: ['SEO', 'Local', 'Google', 'Marketing'],
-    destacado: false
-  },
-  {
-    id: 9,
-    titulo: 'Storytelling Visual: El Arte de Contar Historias con Imágenes',
-    slug: 'storytelling-visual',
-    extracto: 'Las mejores historias no se cuentan con palabras. Descubre cómo usar elementos visuales para crear narrativas poderosas.',
-    contenido: 'El storytelling visual combina fotografía, diseño y narrativa para crear experiencias que cautivan y permanecen en la memoria...',
-    imagen: 'https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?w=1200&h=800&fit=crop',
-    categoria: 'branding',
-    autor: 'Equipo Creativo',
-    fecha: '25 de Diciembre, 2025',
-    tiempoLectura: '8 min',
-    tags: ['Storytelling', 'Visual', 'Fotografía', 'Narrativa'],
     destacado: false
   }
 ];
@@ -261,7 +261,7 @@ export default function BlogPage() {
             branding y producción audiovisual. <span className="text-[#05ABC4] font-bold">Aprende con los expertos.</span>
           </p>
 
-          {/* Search Bar (decorativo por ahora) */}
+          {/* Search Bar */}
           <div className="max-w-2xl mx-auto">
             <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-full p-2 flex items-center gap-4 hover:border-[#05ABC4] transition-all">
               <input 
