@@ -7,12 +7,22 @@ async function bootstrap() {
 
   // CORS
   app.enableCors({
-    origin: [
-      'https://fjonic-admin.vercel.app',
-      'http://localhost:3000',
-      'http://127.0.0.1:3000',
-    ],
+    origin: 'https://fjonic-admin.vercel.app',
     credentials: true,
+    methods: [
+      'GET',
+      'HEAD',
+      'PUT',
+      'PATCH',
+      'POST',
+      'DELETE',
+      'OPTIONS',
+    ],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+    ],
   });
 
   // Validación global
@@ -36,7 +46,7 @@ async function bootstrap() {
   await app.listen(port);
 
   console.log(
-    `\n🍔 FJonic Backend ACTIVADO en http://localhost:${port}`,
+    `🍔 FJonic Backend ACTIVADO en http://localhost:${port}`,
   );
 }
 
